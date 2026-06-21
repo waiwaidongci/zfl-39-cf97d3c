@@ -31,11 +31,11 @@
       "source": "构树皮",
       "vat": "三号缸",
       "vatId": "V-003",
-      "days": 6,
+      "days": 11,
       "expectedDays": 7,
       "startDate": "2026-06-15",
       "owner": "林素",
-      "status": "发酵中",
+      "status": "异常观察",
       "logs": [
         {
           "at": "2026-06-15",
@@ -65,6 +65,36 @@
           "step": "现场巡检",
           "note": "温度24.8，正常酸味，松散，换水:未换水",
           "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:44:02Z",
+          "step": "现场巡检",
+          "note": "温度25.5，正常酸味，松散，换水:未换水",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:44:39.055Z",
+          "step": "现场巡检",
+          "note": "温度26.0，正常酸味，较松散，换水:已换水",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:45:39.658Z",
+          "step": "现场巡检",
+          "note": "温度25.5，正常酸味，松散，换水:未换水",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:46:16.429Z",
+          "step": "现场巡检",
+          "note": "温度24.0，正常酸味，较松散，换水:已换水",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:46:16.429Z",
+          "step": "现场巡检",
+          "note": "温度25.0，浓烈酸味，一般，换水:未换水，异常:发现霉斑",
+          "abnormal": true
         }
       ],
       "observations": [
@@ -102,6 +132,51 @@
           "changedWater": "未换水",
           "abnormalNote": "",
           "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:44:02Z",
+          "temperature": "25.5",
+          "smell": "正常酸味",
+          "fiber": "松散",
+          "changedWater": "未换水",
+          "abnormalNote": "",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:44:39.055Z",
+          "temperature": "26.0",
+          "smell": "正常酸味",
+          "fiber": "较松散",
+          "changedWater": "已换水",
+          "abnormalNote": "",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:45:39.658Z",
+          "temperature": "25.5",
+          "smell": "正常酸味",
+          "fiber": "松散",
+          "changedWater": "未换水",
+          "abnormalNote": "",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:46:16.429Z",
+          "temperature": "24.0",
+          "smell": "正常酸味",
+          "fiber": "较松散",
+          "changedWater": "已换水",
+          "abnormalNote": "",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:46:16.429Z",
+          "temperature": "25.0",
+          "smell": "浓烈酸味",
+          "fiber": "一般",
+          "changedWater": "未换水",
+          "abnormalNote": "发现霉斑",
+          "abnormal": true
         }
       ]
     }

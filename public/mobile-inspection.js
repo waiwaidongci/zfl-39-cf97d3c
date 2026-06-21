@@ -238,21 +238,36 @@ function renderPendingList() {
   $('#clear-pending').style.display = 'block';
   list.innerHTML = pendingRecords.map(function(r, idx) {
     const isAbnormal = r.abnormal === '是';
+    const hasError = !!r.syncError;
     var fieldsHtml = '';
     if (r.temperature) fieldsHtml += '<span>温度 ' + r.temperature + '℃</span>';
     if (r.smell) fieldsHtml += '<span>' + r.smell + '</span>';
     if (r.fiber) fieldsHtml += '<span>' + r.fiber + '</span>';
     if (r.changedWater) fieldsHtml += '<span>' + r.changedWater + '</span>';
     if (isAbnormal) fieldsHtml += '<span class="warn">异常: ' + (r.abnormalNote || '有') + '</span>';
-    var deleteBtn = r.synced ? '' : '<button class="pending-delete" data-idx="' + idx + '">删除</button>';
-    return '<div class="pending-card ' + (r.synced ? 'pending-synced' : '') + '">' +
+    var errorHtml = '';
+    if (hasError) {
+      errorHtml = '<div class="sync-error">' +
+        '<strong>同步失败</strong>（已尝试' + (r.syncAttempts || 1) + '次）: ' +
+        r.syncError +
+        '</div>';
+    }
+    var statusClass = hasError ? 'status-failed' : 'status-pending';
+    var statusText = hasError ? '同步失败' : '待同步';
+    var actionsHtml = '';
+    actionsHtml += '<button class="pending-delete" data-idx="' + idx + '">删除</button>';
+    if (hasError) {
+      actionsHtml = '<button class="pending-retry" data-idx="' + idx + '">重试</button>' + actionsHtml;
+    }
+    return '<div class="pending-card ' + (hasError ? 'pending-failed' : '') + '">' +
       '<div class="pending-header">' +
         '<span class="pending-batch">' + (r.itemCode || r.itemId) + '</span>' +
-        '<span class="pending-status ' + (r.synced ? 'status-synced' : 'status-pending') + '">' + (r.synced ? '已同步' : '待同步') + '</span>' +
+        '<span class="pending-status ' + statusClass + '">' + statusText + '</span>' +
       '</div>' +
       '<div class="pending-time">' + formatTime(r.savedAt) + '</div>' +
       '<div class="pending-fields">' + fieldsHtml + '</div>' +
-      deleteBtn +
+      errorHtml +
+      '<div class="pending-actions">' + actionsHtml + '</div>' +
     '</div>';
   }).join('');
   $$('.pending-delete').forEach(function(btn) {
@@ -264,6 +279,20 @@ function renderPendingList() {
         savePendingToLocal();
         updateSyncBanner();
         renderPendingList();
+      }
+    };
+  });
+  $$('.pending-retry').forEach(function(btn) {
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      const idx = Number(btn.dataset.idx);
+      const rec = pendingRecords[idx];
+      if (rec) {
+        delete rec.syncError;
+        delete rec.syncFailedAt;
+        savePendingToLocal();
+        renderPendingList();
+        syncRecords();
       }
     };
   });
@@ -287,27 +316,48 @@ async function syncRecords() {
       method: 'POST',
       body: JSON.stringify({ inspections: unsynced })
     });
-    for (const s of result.success) {
-      for (let i = 0; i < pendingRecords.length; i++) {
-        const r = pendingRecords[i];
-        if (!r.synced && (r.itemCode === s.itemCode || r.itemId === s.itemId)) {
-          r.synced = true;
-          r.syncedAt = Date.now();
-          break;
+    const successLocalIds = new Set();
+    if (result.success && Array.isArray(result.success)) {
+      for (const s of result.success) {
+        if (s.localId) {
+          successLocalIds.add(s.localId);
         }
       }
     }
-    pendingRecords = pendingRecords.filter(function(r) { return !r.synced; });
+    if (result.failed && Array.isArray(result.failed)) {
+      for (const f of result.failed) {
+        if (f.localId) {
+          const rec = pendingRecords.find(function(r) { return r.localId === f.localId; });
+          if (rec) {
+            rec.syncError = f.reason;
+            rec.syncFailedAt = Date.now();
+            rec.syncAttempts = (rec.syncAttempts || 0) + 1;
+          }
+        }
+      }
+    }
+    const beforeCount = pendingRecords.length;
+    pendingRecords = pendingRecords.filter(function(r) {
+      return !successLocalIds.has(r.localId);
+    });
+    const removedCount = beforeCount - pendingRecords.length;
     savePendingToLocal();
     updateSyncBanner();
     renderPendingList();
     if (result.failed && result.failed.length > 0) {
-      showToast('同步完成: 成功' + result.successCount + '条, 失败' + result.failedCount + '条', 'warning');
+      showToast('同步完成: 成功' + removedCount + '条, 失败' + result.failed.length + '条', 'warning');
     } else {
-      showToast('同步成功 ' + result.successCount + ' 条记录', 'success');
+      showToast('同步成功 ' + removedCount + ' 条记录', 'success');
     }
     await loadBatches();
   } catch (err) {
+    for (const r of unsynced) {
+      r.syncError = err.message || '网络请求失败';
+      r.syncFailedAt = Date.now();
+      r.syncAttempts = (r.syncAttempts || 0) + 1;
+    }
+    savePendingToLocal();
+    renderPendingList();
     showToast('同步失败: ' + err.message, 'error');
   } finally {
     updateSyncBanner();
