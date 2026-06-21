@@ -39,6 +39,8 @@ export function boardPage() {
           <option value="">全部</option>
           <option value="overdue">有超期批次</option>
           <option value="overload">容量过载</option>
+          <option value="abnormal">有异常占用</option>
+          <option value="nodate">日期缺失</option>
           <option value="risk">有风险</option>
         </select>
       </div>
@@ -83,6 +85,7 @@ export function boardPage() {
       const vats = boardData.vats || [];
       const totalCapacity = vats.reduce((sum, v) => sum + (v.capacity || 0), 0);
       const totalOccupied = vats.reduce((sum, v) => sum + (v.occupied || 0), 0);
+      const totalAbnormal = vats.reduce((sum, v) => sum + (v.abnormalOccupied || 0), 0);
       const totalOverdue = vats.reduce((sum, v) => sum + (v.overdueCount || 0), 0);
       const riskVats = vats.filter(v => v.hasRisk).length;
 
@@ -90,6 +93,7 @@ export function boardPage() {
         '<div class="bstat"><span>浸泡缸总数</span><strong>' + vats.length + '</strong></div>' +
         '<div class="bstat"><span>总容量</span><strong>' + totalCapacity + ' 批次</strong></div>' +
         '<div class="bstat"><span>已占用</span><strong>' + totalOccupied + ' 批次</strong></div>' +
+        '<div class="bstat warn"><span>异常占用</span><strong>' + totalAbnormal + ' 批次</strong></div>' +
         '<div class="bstat warn"><span>超期批次</span><strong>' + totalOverdue + '</strong></div>' +
         '<div class="bstat warn"><span>有风险缸</span><strong>' + riskVats + '</strong></div>';
     }
@@ -100,10 +104,12 @@ export function boardPage() {
       if (vat.hasRisk) cls.push('risk');
       if (vat.overload) cls.push('overload');
       if (vat.overdueCount > 0) cls.push('has-overdue');
+      if (vat.abnormalOccupied > 0) cls.push('has-abnormal');
 
       let badges = '';
       if (vat.overload) badges += '<span class="vat-badge overload-badge">容量过载</span>';
       if (vat.overdueCount > 0) badges += '<span class="vat-badge overdue-badge">' + vat.overdueCount + ' 批超期</span>';
+      if (vat.abnormalOccupied > 0) badges += '<span class="vat-badge abnormal-badge">' + vat.abnormalOccupied + ' 批异常</span>';
 
       const itemsHtml = items.length ? items.map(item => batchCardHtml(item)).join('') : '<div class="empty-batch">暂无发酵中批次</div>';
 
@@ -134,10 +140,24 @@ export function boardPage() {
       const cls = ['batch-card'];
       if (item.isOverdue) cls.push('overdue');
       if (item.status === '异常观察') cls.push('abnormal');
+      if (item.noDateWarning) cls.push('no-date');
 
       let badges = '';
       if (item.isOverdue) badges += '<span class="batch-badge overdue-badge">超期 ' + item.overdueDays + ' 天</span>';
       if (item.status === '异常观察') badges += '<span class="batch-badge abnormal-badge">异常观察</span>';
+      if (item.noDateWarning) badges += '<span class="batch-badge no-date-badge">日期缺失</span>';
+
+      const dateInfo = [];
+      if (item.startDate) {
+        dateInfo.push('<span>入缸：' + item.startDate + '</span>');
+      } else {
+        dateInfo.push('<span class="warn">入缸日期缺失</span>');
+      }
+      if (item.expectedEndDate) {
+        dateInfo.push('<span>预计可抄纸：' + item.expectedEndDate + '</span>');
+      } else if (!item.noDateWarning) {
+        dateInfo.push('<span class="warn">无法计算预计日期</span>');
+      }
 
       return '<div class="' + cls.join(' ') + '">' +
         '<div class="batch-head">' +
@@ -155,10 +175,7 @@ export function boardPage() {
             '<div class="batch-progress-fill" style="width:' + item.progress + '%"></div>' +
           '</div>' +
         '</div>' +
-        '<div class="batch-dates">' +
-          (item.startDate ? '<span>入缸：' + item.startDate + '</span>' : '') +
-          (item.expectedEndDate ? '<span>预计可抄纸：' + item.expectedEndDate + '</span>' : '') +
-        '</div>' +
+        '<div class="batch-dates">' + dateInfo.join('') + '</div>' +
       '</div>';
     }
 
@@ -180,6 +197,13 @@ export function boardPage() {
         vats = vats.filter(v => v.overdueCount > 0);
       } else if (risk === 'overload') {
         vats = vats.filter(v => v.overload);
+      } else if (risk === 'abnormal') {
+        vats = vats.filter(v => v.abnormalOccupied > 0);
+      } else if (risk === 'nodate') {
+        vats = vats.map(v => ({
+          ...v,
+          items: (v.items || []).filter(i => i.noDateWarning)
+        })).filter(v => (v.items || []).length > 0);
       } else if (risk === 'risk') {
         vats = vats.filter(v => v.hasRisk);
       }
