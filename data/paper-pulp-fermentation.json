@@ -47,6 +47,24 @@
           "at": "2026-06-21T03:50:29.658Z",
           "step": "观察",
           "note": "温度25.1，微酸，松散"
+        },
+        {
+          "at": "2026-06-21T09:22:56Z",
+          "step": "现场巡检",
+          "note": "温度26.5，正常酸味，较松散，换水:未换水",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:22:56.781Z",
+          "step": "现场巡检",
+          "note": "温度26.5，正常酸味，较松散，换水:未换水",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:26:39.662Z",
+          "step": "现场巡检",
+          "note": "温度24.8，正常酸味，松散，换水:未换水",
+          "abnormal": false
         }
       ],
       "observations": [
@@ -56,6 +74,33 @@
           "smell": "微酸",
           "fiber": "松散",
           "changedWater": "是",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:22:56Z",
+          "temperature": "26.5",
+          "smell": "正常酸味",
+          "fiber": "较松散",
+          "changedWater": "未换水",
+          "abnormalNote": "",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:22:56.781Z",
+          "temperature": "26.5",
+          "smell": "正常酸味",
+          "fiber": "较松散",
+          "changedWater": "未换水",
+          "abnormalNote": "",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:26:39.662Z",
+          "temperature": "24.8",
+          "smell": "正常酸味",
+          "fiber": "松散",
+          "changedWater": "未换水",
+          "abnormalNote": "",
           "abnormal": false
         }
       ]

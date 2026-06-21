@@ -3,6 +3,7 @@ import { mainPage } from "../views/main.js";
 import { timelinePage } from "../views/timeline.js";
 import { boardPage } from "../views/board.js";
 import { batchImportPage } from "../views/batch-import.js";
+import { mobileInspectionPage } from "../views/mobile-inspection.js";
 
 export function handlePages(req, res, url) {
   if (url.pathname === "/") {
@@ -19,6 +20,10 @@ export function handlePages(req, res, url) {
   }
   if (url.pathname === "/batch-import") {
     html(res, batchImportPage());
+    return true;
+  }
+  if (url.pathname === "/mobile-inspection") {
+    html(res, mobileInspectionPage());
     return true;
   }
   return false;

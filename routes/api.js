@@ -1,4 +1,4 @@
-import { loadDb, saveDb, body, send, newId, computeStats, summarize, stages, newVatId, getVatById, computeVatBoard, parseObservationText, previewBatchImport, applyBatchImport } from "../lib/db.js";
+import { loadDb, saveDb, body, send, newId, computeStats, summarize, stages, newVatId, getVatById, computeVatBoard, parseObservationText, previewBatchImport, applyBatchImport, applyBatchInspections, validateInspectionRecord } from "../lib/db.js";
 import { buildAllTimeline, uniqueValues } from "../lib/timeline.js";
 
 export async function handleApi(req, res, url, method) {
@@ -138,6 +138,39 @@ export async function handleApi(req, res, url, method) {
     }
     const results = await applyBatchImport(db, previewData);
     return send(res, 200, results);
+  }
+
+  if (method === "GET" && url.pathname === "/api/items/active") {
+    const activeItems = (db.items || []).filter(
+      (item) => item.status === "发酵中" || item.status === "入缸" || item.status === "异常观察"
+    );
+    return send(res, 200, activeItems.map(summarize));
+  }
+
+  if (method === "POST" && url.pathname === "/api/inspections/batch") {
+    const input = await body(req);
+    const inspections = input.inspections || input;
+    if (!Array.isArray(inspections) || inspections.length === 0) {
+      return send(res, 400, { error: "invalid_data", message: "巡检记录不能为空" });
+    }
+    const previewErrors = [];
+    for (let i = 0; i < inspections.length; i++) {
+      const v = validateInspectionRecord(inspections[i]);
+      if (!v.valid) {
+        previewErrors.push({ index: i, errors: v.errors });
+      }
+    }
+    if (previewErrors.length > 0 && previewErrors.length === inspections.length) {
+      return send(res, 400, { error: "all_records_invalid", validationErrors: previewErrors });
+    }
+    const results = await applyBatchInspections(db, inspections);
+    return send(res, 200, {
+      success: results.success,
+      failed: results.failed,
+      total: inspections.length,
+      successCount: results.success.length,
+      failedCount: results.failed.length,
+    });
   }
 
   return null;
