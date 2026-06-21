@@ -28,28 +28,29 @@ export function timelinePage() {
   </div>
   <script>
     let data = { events: [], vats: [], owners: [] };
+    let pendingFilter = { code: '', vat: '', owner: '' };
 
     async function loadTimeline() {
-      const code = document.getElementById('fCode').value.trim();
-      const vat = document.getElementById('fVat').value;
-      const owner = document.getElementById('fOwner').value;
+      const code = pendingFilter.code || document.getElementById('fCode').value.trim();
+      const vat = pendingFilter.vat || document.getElementById('fVat').value;
+      const owner = pendingFilter.owner || document.getElementById('fOwner').value;
       const params = new URLSearchParams();
       if (code) params.set('code', code);
       if (vat) params.set('vat', vat);
       if (owner) params.set('owner', owner);
+      pendingFilter = { code: '', vat: '', owner: '' };
       const res = await fetch('/api/timeline?' + params.toString());
       data = await res.json();
-      renderFilters();
+      renderFilters(code, vat, owner);
       render();
     }
 
-    function renderFilters() {
+    function renderFilters(presetCode, presetVat, presetOwner) {
       const vatSel = document.getElementById('fVat');
-      const curVat = vatSel.value;
-      vatSel.innerHTML = '<option value="">全部</option>' + data.vats.map(v => '<option value="'+v+'" '+(v===curVat?'selected':'')+'>'+v+'</option>').join('');
+      vatSel.innerHTML = '<option value="">全部</option>' + data.vats.map(v => '<option value="'+v+'" '+(v===presetVat?'selected':'')+'>'+v+'</option>').join('');
       const ownerSel = document.getElementById('fOwner');
-      const curOwner = ownerSel.value;
-      ownerSel.innerHTML = '<option value="">全部</option>' + data.owners.map(o => '<option value="'+o+'" '+(o===curOwner?'selected':'')+'>'+o+'</option>').join('');
+      ownerSel.innerHTML = '<option value="">全部</option>' + data.owners.map(o => '<option value="'+o+'" '+(o===presetOwner?'selected':'')+'>'+o+'</option>').join('');
+      if (presetCode) document.getElementById('fCode').value = presetCode;
     }
 
     function formatTime(at) {
@@ -121,11 +122,22 @@ export function timelinePage() {
       document.getElementById('fCode').value = '';
       document.getElementById('fVat').value = '';
       document.getElementById('fOwner').value = '';
+      window.history.pushState({}, '', '/timeline');
       loadTimeline();
     };
     document.getElementById('fCode').onkeydown = (e) => { if (e.key === 'Enter') loadTimeline(); };
 
-    loadTimeline();
+    function applyUrlFilters() {
+      const params = new URLSearchParams(window.location.search);
+      pendingFilter = {
+        code: params.get('code') || '',
+        vat: params.get('vat') || '',
+        owner: params.get('owner') || '',
+      };
+      return loadTimeline();
+    }
+
+    applyUrlFilters();
   </script>
 </body>
 </html>`;

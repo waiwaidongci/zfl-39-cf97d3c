@@ -139,6 +139,16 @@ export function handoverPage() {
       });
     }
 
+    function getBatchInfo(codeOrId) {
+      return batches.find(b => b.id === codeOrId || b.code === codeOrId) || null;
+    }
+    function getStatusClass(status) {
+      if (status === '可抄纸') return 'status-ready';
+      if (status === '异常观察') return 'status-abnormal';
+      if (status === '发酵中') return 'status-fermenting';
+      if (status === '入缸') return 'status-started';
+      return '';
+    }
     function renderList() {
       const list = getFilteredHandovers();
       const container = document.getElementById('handoverList');
@@ -147,15 +157,42 @@ export function handoverPage() {
         return;
       }
       container.innerHTML = list.map(h => {
-        const batchesHtml = (h.batchCodes || []).map(c =>
-          '<span class="batch-tag">' + c + '</span>'
-        ).join('');
+        const codes = h.batchCodes || [];
+        const batchesHtml = codes.map(c => {
+          const info = getBatchInfo(c);
+          const status = info ? info.status : '';
+          const statusCls = status ? getStatusClass(status) : '';
+          const vat = info ? (info.vat || '') : '';
+          const owner = info ? (info.owner || '') : '';
+          const source = info ? (info.source || '') : '';
+          return '<a class="batch-tag ' + statusCls + '" href="/timeline?code=' + encodeURIComponent(c) + '" title="原料:' + source + ' · 缸:' + vat + ' · 负责人:' + owner + ' · 状态:' + status + '">' +
+            '<span class="bt-code">' + c + '</span>' +
+            (status ? '<span class="bt-status">' + status + '</span>' : '') +
+          '</a>';
+        }).join('');
+
+        const batchDetailHtml = (codes.length > 0) ?
+          '<div class="batch-details">' +
+          codes.map(c => {
+            const info = getBatchInfo(c);
+            if (!info) return '';
+            return '<div class="bd-item">' +
+              '<a class="bd-code" href="/timeline?code=' + encodeURIComponent(c) + '">' + c + '</a>' +
+              '<span class="bd-source">' + (info.source || '-') + '</span>' +
+              '<span class="bd-vat">' + (info.vat || '-') + '</span>' +
+              '<span class="bd-owner">' + (info.owner || '-') + '</span>' +
+              '<span class="bd-status ' + getStatusClass(info.status) + '">' + info.status + '</span>' +
+            '</div>';
+          }).join('') +
+          '</div>' : '';
+
         return '<div class="handover-card">' +
           '<div class="handover-head">' +
             '<span class="handover-time">' + formatDateTime(h.createdAt) + '</span>' +
             '<span class="handover-arrow">' + h.handedOverBy + ' → ' + h.receivedBy + '</span>' +
           '</div>' +
           '<div class="handover-batches">' + batchesHtml + '</div>' +
+          batchDetailHtml +
           (h.keyObservations ? '<div class="handover-row"><b>重点观察：</b><span>' + h.keyObservations + '</span></div>' : '') +
           (h.pendingAbnormalities ? '<div class="handover-row warn"><b>未处理异常：</b><span>' + h.pendingAbnormalities + '</span></div>' : '') +
           (h.nextWaterChangeReminder ? '<div class="handover-row water"><b>换水提醒：</b><span>' + h.nextWaterChangeReminder + '</span></div>' : '') +
@@ -200,7 +237,26 @@ export function handoverPage() {
     document.getElementById('filterPerson').onchange = renderList;
     document.getElementById('filterBatch').onchange = renderList;
 
-    loadData();
+    function applyUrlFilters() {
+      const params = new URLSearchParams(window.location.search);
+      const batchCode = params.get('batchCode') || params.get('batchId') || '';
+      const person = params.get('person') || '';
+      if (batchCode) {
+        const batchSel = document.getElementById('filterBatch');
+        if (Array.from(batchSel.options).some(o => o.value === batchCode)) {
+          batchSel.value = batchCode;
+        }
+      }
+      if (person) {
+        const personSel = document.getElementById('filterPerson');
+        if (Array.from(personSel.options).some(o => o.value === person)) {
+          personSel.value = person;
+        }
+      }
+      renderList();
+    }
+
+    loadData().then(applyUrlFilters);
   </script>
 </body>
 </html>`;

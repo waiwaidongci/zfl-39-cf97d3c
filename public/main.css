@@ -38,12 +38,46 @@ main {
   overflow: auto;
 }
 
+.card-title-link {
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.card-title-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .handover-summary {
+  display: block;
   background: var(--obs-bg);
   border: 1px solid var(--obs-border);
   border-radius: 6px;
   padding: 8px 10px;
   margin: 4px 0;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.15s ease;
+}
+
+.handover-summary:hover {
+  border-color: var(--accent);
+  background: #f4f8ef;
+  transform: translateY(-1px);
+}
+
+.handover-summary.empty-handover {
+  background: #fafafa;
+  border: 1px dashed #ccc;
+  color: var(--muted);
+  text-align: center;
+}
+
+.handover-summary.empty-handover:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--obs-bg);
 }
 
 .handover-title {

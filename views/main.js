@@ -74,19 +74,26 @@ export function mainPage() {
       return m + '-' + day + ' ' + hh + ':' + mm;
     }
     function cardHtml(item) {
+      const itemCode = item.code || item.id;
       const main = fields.filter(([k]) => k !== 'vatId' && k !== 'startDate' && k !== 'expectedDays').slice(0,4).map(([key,label]) => '<div><b>'+label+'</b> '+(item[key] ?? '')+'</div>').join('');
       const tasks = (item.tasks || []).map(t => '<div class="meta">任务 '+t.position+' · '+t.status+' · '+t.tension+'</div>').join('');
       const logs = (item.logs || []).slice(-4).map(l => '<div>'+l.step+'：'+l.note+'</div>').join('');
-      const reportBtn = item.status === '可抄纸' ? '<button class="secondary" data-report="'+(item.id || item.code)+'">📋 评估报告</button>' : '';
+      const reportBtn = item.status === '可抄纸' ? '<button class="secondary" data-report="'+itemCode+'">📋 评估报告</button>' : '';
       const handover = item.latestHandover;
+      const handoverLink = '/handover?batchCode=' + encodeURIComponent(itemCode);
+      const timelineLink = '/timeline?code=' + encodeURIComponent(itemCode);
       const handoverHtml = handover ?
-        '<div class="handover-summary"><div class="handover-title">🤝 最近交接 · ' + formatDateTime(handover.createdAt) + '</div>' +
-        '<div class="handover-line">' + handover.handedOverBy + ' → ' + handover.receivedBy + '</div>' +
-        (handover.keyObservations ? '<div class="handover-line meta">观察：' + handover.keyObservations + '</div>' : '') +
-        (handover.pendingAbnormalities ? '<div class="handover-line warn">异常：' + handover.pendingAbnormalities + '</div>' : '') +
-        (handover.nextWaterChangeReminder ? '<div class="handover-line water">💧 换水提醒：' + handover.nextWaterChangeReminder + '</div>' : '') +
-        '</div>' : '';
-      return '<article class="card"><h3>'+(item.code || item.id)+'</h3><span class="pill">'+item.status+'</span>'+main+tasks+handoverHtml+'<label>状态</label><select data-status="'+(item.id || item.code)+'">'+stages.map(s => '<option '+(s===item.status?'selected':'')+'>'+s+'</option>').join('')+'</select><button class="secondary" data-note="'+(item.id || item.code)+'">追加备注</button>'+reportBtn+'<div class="logs meta">'+(logs || '暂无记录')+'</div></article>';
+        '<a class="handover-summary" href="' + handoverLink + '" title="点击查看该批次全部交接记录">' +
+          '<div class="handover-title">🤝 最近交接 · ' + formatDateTime(handover.createdAt) + ' →</div>' +
+          '<div class="handover-line">' + handover.handedOverBy + ' → ' + handover.receivedBy + '</div>' +
+          (handover.keyObservations ? '<div class="handover-line meta">观察：' + handover.keyObservations + '</div>' : '') +
+          (handover.pendingAbnormalities ? '<div class="handover-line warn">异常：' + handover.pendingAbnormalities + '</div>' : '') +
+          (handover.nextWaterChangeReminder ? '<div class="handover-line water">💧 换水提醒：' + handover.nextWaterChangeReminder + '</div>' : '') +
+        '</a>' :
+        '<a class="handover-summary empty-handover" href="/handover" title="去创建交接记录">' +
+          '<div class="handover-title">🤝 暂无交接记录 · 点击去创建</div>' +
+        '</a>';
+      return '<article class="card"><h3><a class="card-title-link" href="' + timelineLink + '" title="查看该批次时间轴">' + itemCode + '</a></h3><span class="pill">'+item.status+'</span>'+main+tasks+handoverHtml+'<label>状态</label><select data-status="'+itemCode+'">'+stages.map(s => '<option '+(s===item.status?'selected':'')+'>'+s+'</option>').join('')+'</select><button class="secondary" data-note="'+itemCode+'">追加备注</button>'+reportBtn+'<div class="logs meta">'+(logs || '暂无记录')+'</div></article>';
     }
     async function load() {
       items = await api('/api/items');

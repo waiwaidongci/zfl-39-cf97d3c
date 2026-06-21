@@ -71,6 +71,11 @@
           "at": "2026-06-21T13:55:51.841Z",
           "step": "交接",
           "note": "交接给李工（交出人：王师傅）"
+        },
+        {
+          "at": "2026-06-21T14:16:49.217Z",
+          "step": "交接",
+          "note": "交接给林素（交出人：李工）"
         }
       ],
       "observations": [
@@ -181,6 +186,11 @@
           "step": "现场巡检",
           "note": "温度25.0，浓烈酸味，一般，换水:未换水，异常:发现霉斑",
           "abnormal": true
+        },
+        {
+          "at": "2026-06-21T14:16:49.217Z",
+          "step": "交接",
+          "note": "交接给林素（交出人：李工）"
         }
       ],
       "observations": [
@@ -340,6 +350,24 @@
     }
   ],
   "handovers": [
+    {
+      "id": "HO-51409217",
+      "handedOverBy": "李工",
+      "receivedBy": "林素",
+      "batchIds": [
+        "PF-001",
+        "PF-002"
+      ],
+      "batchCodes": [
+        "PF-001",
+        "PF-002"
+      ],
+      "keyObservations": "双批次交接测试",
+      "pendingAbnormalities": "PF-001注意温度波动",
+      "nextWaterChangeReminder": "2026-06-24",
+      "note": "",
+      "createdAt": "2026-06-21T14:16:49.217Z"
+    },
     {
       "id": "HO-50151856",
       "handedOverBy": "王师傅",
