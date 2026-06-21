@@ -14,7 +14,7 @@ export function boardPage() {
   <header>
     <div>
       <h1>浸泡缸容量与排程看板</h1>
-      <div class="meta">管理浸泡缸容量、发酵批次排程与超期预警 · <a class="nav-link" href="/">← 返回主页</a></div>
+      <div class="meta">管理浸泡缸容量、发酵批次排程与超期预警 · <a class="nav-link" href="/batch-import">批量导入观察记录</a> · <a class="nav-link" href="/">← 返回主页</a></div>
     </div>
     <div>
       <button id="addVatBtn" class="secondary">新增浸泡缸</button>

@@ -12,7 +12,7 @@ export function timelinePage() {
   <header>
     <div>
       <h1>批次时间轴与异常复盘</h1>
-      <div class="meta">按批次查看建档、观察、状态变更、备注与异常的完整时间线 · <a class="nav-link" href="/board">浸泡缸容量与排程看板</a> · <a class="nav-link" href="/">← 返回主页</a></div>
+      <div class="meta">按批次查看建档、观察、状态变更、备注与异常的完整时间线 · <a class="nav-link" href="/batch-import">批量导入观察记录</a> · <a class="nav-link" href="/board">浸泡缸容量与排程看板</a> · <a class="nav-link" href="/">← 返回主页</a></div>
     </div>
   </header>
   <div class="content">

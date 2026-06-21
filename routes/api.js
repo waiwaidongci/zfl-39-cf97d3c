@@ -1,4 +1,4 @@
-import { loadDb, saveDb, body, send, newId, computeStats, summarize, stages, newVatId, getVatById, computeVatBoard } from "../lib/db.js";
+import { loadDb, saveDb, body, send, newId, computeStats, summarize, stages, newVatId, getVatById, computeVatBoard, parseObservationText, previewBatchImport, applyBatchImport } from "../lib/db.js";
 import { buildAllTimeline, uniqueValues } from "../lib/timeline.js";
 
 export async function handleApi(req, res, url, method) {
@@ -120,6 +120,24 @@ export async function handleApi(req, res, url, method) {
   if (method === "GET" && url.pathname === "/api/board") {
     const board = computeVatBoard(db);
     return send(res, 200, { vats: board, stats: computeStats(db.items) });
+  }
+
+  if (method === "POST" && url.pathname === "/api/import/preview") {
+    const input = await body(req);
+    const text = input.text || "";
+    const parsed = parseObservationText(text);
+    const preview = previewBatchImport(db, parsed);
+    return send(res, 200, { parsed, preview });
+  }
+
+  if (method === "POST" && url.pathname === "/api/import/apply") {
+    const input = await body(req);
+    const previewData = input.previewData;
+    if (!previewData || !previewData.matched || previewData.matched.length === 0) {
+      return send(res, 400, { error: "no_matched_data", message: "没有可导入的匹配数据" });
+    }
+    const results = await applyBatchImport(db, previewData);
+    return send(res, 200, results);
   }
 
   return null;
