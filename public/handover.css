@@ -1,0 +1,188 @@
+main {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 22px;
+  padding: 22px 28px;
+}
+
+.form-section h2, .list-section h2 {
+  margin-top: 0;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-col {
+  flex: 1;
+}
+
+.form-col.full {
+  flex: none;
+  width: 100%;
+}
+
+.batch-select-box {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.batch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.batch-item:hover {
+  background: var(--obs-bg);
+}
+
+.batch-item input {
+  width: auto;
+  margin: 0;
+}
+
+.batch-code {
+  font-weight: 700;
+  min-width: 80px;
+}
+
+.batch-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+}
+
+.filters select {
+  width: auto;
+  min-width: 140px;
+}
+
+.handover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.handover-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.handover-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.handover-time {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.handover-arrow {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.handover-batches {
+  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.batch-tag {
+  display: inline-block;
+  background: var(--obs-bg);
+  border: 1px solid var(--obs-border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.handover-row {
+  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.handover-row b {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.handover-row.warn {
+  color: var(--warn);
+}
+
+.handover-row.warn b {
+  color: var(--warn);
+}
+
+.handover-row.water {
+  color: var(--accent);
+}
+
+.handover-row.water b {
+  color: var(--accent);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

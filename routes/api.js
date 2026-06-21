@@ -7,6 +7,8 @@ import {
   listExperiments, getExperimentById, createExperiment, updateExperiment,
   deleteExperiment, addBatchesToExperiment, removeBatchFromExperiment,
   getExperimentWithAnalysis, buildReadinessReport, listReadyBatches,
+  listHandovers, getHandoverById, createHandover, getHandoversByBatch,
+  getLatestHandoverByBatch, getHandoverSummary,
 } from "../lib/db.js";
 import { buildAllTimeline, uniqueValues } from "../lib/timeline.js";
 
@@ -14,7 +16,12 @@ export async function handleApi(req, res, url, method) {
   const db = await loadDbWithMigration();
 
   if (method === "GET" && url.pathname === "/api/items") {
-    return send(res, 200, db.items.map(summarize));
+    const items = db.items.map((item) => {
+      const summary = summarize(item);
+      const latestHandover = getLatestHandoverByBatch(db, item.id || item.code);
+      return { ...summary, latestHandover: latestHandover ? getHandoverSummary(latestHandover) : null };
+    });
+    return send(res, 200, items);
   }
 
   if (method === "POST" && url.pathname === "/api/items") {
@@ -82,10 +89,40 @@ export async function handleApi(req, res, url, method) {
   }
 
   if (method === "GET" && url.pathname === "/api/timeline") {
-    const code = url.searchParams.get("code") || "";
-    const vat = url.searchParams.get("vat") || "";
-    const owner = url.searchParams.get("owner") || "";
-    const events = buildAllTimeline(db.items, { code, vat, owner });
+    const filterCode = url.searchParams.get("code") || "";
+    const filterVat = url.searchParams.get("vat") || "";
+    const filterOwner = url.searchParams.get("owner") || "";
+    const events = buildAllTimeline(db.items, { code: filterCode, vat: filterVat, owner: filterOwner });
+    const handovers = listHandovers(db);
+    for (const h of handovers) {
+      for (const batchCode of h.batchCodes || []) {
+        const item = db.items.find((i) => i.code === batchCode || i.id === batchCode);
+        if (!item) continue;
+        if (filterCode && !(item.code || "").toLowerCase().includes(filterCode.toLowerCase()) && !(item.id || "").toLowerCase().includes(filterCode.toLowerCase())) continue;
+        if (filterVat && !(item.vat || "").includes(filterVat)) continue;
+        if (filterOwner && h.handedOverBy !== filterOwner && h.receivedBy !== filterOwner && !(item.owner || "").includes(filterOwner)) continue;
+        events.push({
+          itemId: item.id || item.code,
+          code: item.code,
+          vat: item.vat,
+          owner: item.owner,
+          source: item.source,
+          batchStatus: item.status,
+          at: h.createdAt,
+          type: "handover",
+          step: "交接",
+          note: h.handedOverBy + " → " + h.receivedBy + (h.keyObservations ? " · 观察：" + h.keyObservations : "") + (h.pendingAbnormalities ? " · 异常：" + h.pendingAbnormalities : "") + (h.nextWaterChangeReminder ? " · 换水提醒：" + h.nextWaterChangeReminder : ""),
+          abnormal: false,
+          handoverId: h.id,
+          handedOverBy: h.handedOverBy,
+          receivedBy: h.receivedBy,
+          keyObservations: h.keyObservations,
+          pendingAbnormalities: h.pendingAbnormalities,
+          nextWaterChangeReminder: h.nextWaterChangeReminder,
+        });
+      }
+    }
+    events.sort((a, b) => new Date(a.at) - new Date(b.at));
     const vats = uniqueValues(db.items, "vat");
     const owners = uniqueValues(db.items, "owner");
     return send(res, 200, { events, vats, owners });
@@ -330,6 +367,56 @@ export async function handleApi(req, res, url, method) {
       return send(res, 400, { error: "not_ready", message: "该批次状态不是可抄纸，无法生成评估报告" });
     }
     return send(res, 200, report);
+  }
+
+  if (method === "GET" && url.pathname === "/api/handovers") {
+    const batchId = url.searchParams.get("batchId") || "";
+    const batchCode = url.searchParams.get("batchCode") || "";
+    const person = url.searchParams.get("person") || "";
+    const options = {};
+    if (batchId) options.batchId = batchId;
+    if (batchCode) options.batchCode = batchCode;
+    if (person) options.person = person;
+    const handovers = listHandovers(db, options);
+    const batches = (db.items || []).map((item) => ({
+      id: item.id || item.code,
+      code: item.code,
+      source: item.source,
+      status: item.status,
+      vat: item.vat,
+      owner: item.owner,
+    }));
+    const allOwners = [...new Set((db.items || []).map((i) => i.owner).filter(Boolean))];
+    return send(res, 200, { handovers, batches, owners: allOwners });
+  }
+
+  if (method === "POST" && url.pathname === "/api/handovers") {
+    const input = await body(req);
+    const result = createHandover(db, input);
+    if (!result.success) {
+      return send(res, 400, { error: "validation_error", errors: result.errors });
+    }
+    await saveDb(db);
+    return send(res, 201, result.handover);
+  }
+
+  const handoverMatch = url.pathname.match(/^\/api\/handovers\/([^/]+)$/);
+  if (handoverMatch && method === "GET") {
+    const handover = getHandoverById(db, handoverMatch[1]);
+    if (!handover) return send(res, 404, { error: "handover_not_found", message: "找不到该交接记录" });
+    return send(res, 200, handover);
+  }
+
+  const batchHandoverMatch = url.pathname.match(/^\/api\/items\/([^/]+)\/handovers$/);
+  if (batchHandoverMatch && method === "GET") {
+    const handovers = getHandoversByBatch(db, batchHandoverMatch[1]);
+    return send(res, 200, { handovers });
+  }
+
+  const batchLastHandoverMatch = url.pathname.match(/^\/api\/items\/([^/]+)\/last-handover$/);
+  if (batchLastHandoverMatch && method === "GET") {
+    const handover = getLatestHandoverByBatch(db, batchLastHandoverMatch[1]);
+    return send(res, 200, { handover: handover ? getHandoverSummary(handover) : null });
   }
 
   return null;

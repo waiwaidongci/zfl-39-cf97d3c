@@ -66,6 +66,11 @@
           "step": "观察",
           "note": "温度25.8，正常酸味，纤维松散均匀，已达到可抄纸标准",
           "abnormal": false
+        },
+        {
+          "at": "2026-06-21T13:55:51.841Z",
+          "step": "交接",
+          "note": "交接给李工（交出人：王师傅）"
         }
       ],
       "observations": [
@@ -332,6 +337,38 @@
       "batchIds": [],
       "createdAt": "2026-06-10T00:00:00.000Z",
       "updatedAt": "2026-06-10T00:00:00.000Z"
+    }
+  ],
+  "handovers": [
+    {
+      "id": "HO-50151856",
+      "handedOverBy": "王师傅",
+      "receivedBy": "李工",
+      "batchIds": [
+        "PF-002"
+      ],
+      "batchCodes": [
+        "PF-002"
+      ],
+      "keyObservations": "状态良好",
+      "pendingAbnormalities": "无",
+      "nextWaterChangeReminder": "2026-06-25",
+      "note": "测试交接",
+      "createdAt": "2026-06-21T13:55:51.841Z"
+    },
+    {
+      "id": "HO-49847499",
+      "handedOverBy": "林素",
+      "receivedBy": "王师傅",
+      "batchIds": [],
+      "batchCodes": [
+        "PF-001"
+      ],
+      "keyObservations": "温度稳定，气味正常",
+      "pendingAbnormalities": "无",
+      "nextWaterChangeReminder": "2026-06-23",
+      "note": "正常交接",
+      "createdAt": "2026-06-21T13:50:47.499Z"
     }
   ]
 }

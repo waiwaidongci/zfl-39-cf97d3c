@@ -83,13 +83,26 @@ export function timelinePage() {
       document.getElementById('timeline').innerHTML = events.map(ev => {
         const isAbnormal = ev.abnormal;
         const isObs = ev.type === 'observation';
+        const isHandover = ev.type === 'handover';
         const cls = ['tl-event'];
         if (isAbnormal) cls.push('abnormal');
         if (isObs) cls.push('observation');
+        if (isHandover) cls.push('handover');
 
         let badges = '';
         if (isAbnormal) badges += '<span class="tl-badge abnormal-badge">异常</span>';
         if (isObs) badges += '<span class="tl-badge obs-badge">观察</span>';
+        if (isHandover) badges += '<span class="tl-badge handover-badge">交接</span>';
+
+        let detailHtml = '';
+        if (isHandover) {
+          detailHtml = '<div class="handover-detail">';
+          detailHtml += '<div class="hd-row"><b>交出人：</b><span>' + (ev.handedOverBy || '-') + '</span> <b>接收人：</b><span>' + (ev.receivedBy || '-') + '</span></div>';
+          if (ev.keyObservations) detailHtml += '<div class="hd-row"><b>重点观察：</b><span>' + ev.keyObservations + '</span></div>';
+          if (ev.pendingAbnormalities) detailHtml += '<div class="hd-row warn"><b>未处理异常：</b><span>' + ev.pendingAbnormalities + '</span></div>';
+          if (ev.nextWaterChangeReminder) detailHtml += '<div class="hd-row water"><b>换水提醒：</b><span>' + ev.nextWaterChangeReminder + '</span></div>';
+          detailHtml += '</div>';
+        }
 
         return '<div class="'+cls.join(' ')+'">' +
           '<div class="tl-dot"></div>' +
@@ -97,6 +110,7 @@ export function timelinePage() {
             '<div class="tl-head"><span class="tl-step">'+ev.step+badges+'</span><span class="tl-time">'+formatTime(ev.at)+'</span></div>' +
             '<div class="tl-batch"><span>'+ev.code+'</span> 缸: '+(ev.vat||'-')+' · 负责人: '+(ev.owner||'-')+'</div>' +
             '<div class="tl-note">'+ev.note+'</div>' +
+            detailHtml +
           '</div>' +
         '</div>';
       }).join('');

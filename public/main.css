@@ -38,6 +38,38 @@ main {
   overflow: auto;
 }
 
+.handover-summary {
+  background: var(--obs-bg);
+  border: 1px solid var(--obs-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 4px 0;
+}
+
+.handover-title {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: var(--accent);
+}
+
+.handover-line {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.handover-line.meta {
+  color: var(--muted);
+}
+
+.handover-line.warn {
+  color: var(--warn);
+}
+
+.handover-line.water {
+  color: var(--accent);
+}
+
 .mt-14 { margin-top: 14px; }
 
 @media (max-width: 900px) {

@@ -125,6 +125,46 @@ h1 { font-size: 24px; }
   border-left: 3px solid var(--obs-border);
 }
 
+.tl-event.handover .tl-card {
+  border-left: 3px solid var(--accent);
+  background: var(--obs-bg);
+}
+
+.tl-event.handover .tl-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.tl-badge.handover-badge {
+  background: var(--accent);
+  color: #fff;
+}
+
+.handover-detail {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.handover-detail .hd-row {
+  margin: 2px 0;
+}
+
+.handover-detail .hd-row b {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.handover-detail .hd-row.warn {
+  color: var(--warn);
+}
+
+.handover-detail .hd-row.water {
+  color: var(--accent);
+}
+
 .tl-head {
   display: flex;
   justify-content: space-between;

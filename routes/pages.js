@@ -7,6 +7,7 @@ import { mobileInspectionPage } from "../views/mobile-inspection.js";
 import { rulesPage } from "../views/rules.js";
 import { experimentsPage } from "../views/experiments.js";
 import { reportPage } from "../views/report.js";
+import { handoverPage } from "../views/handover.js";
 
 export function handlePages(req, res, url) {
   if (url.pathname === "/") {
@@ -44,6 +45,10 @@ export function handlePages(req, res, url) {
   const reportMatch = url.pathname.match(/^\/report\/([^/]+)$/);
   if (reportMatch) {
     html(res, reportPage(reportMatch[1]));
+    return true;
+  }
+  if (url.pathname === "/handover") {
+    html(res, handoverPage());
     return true;
   }
   return false;
