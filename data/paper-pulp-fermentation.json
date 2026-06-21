@@ -245,22 +245,12 @@
   ],
   "experiments": [
     {
-      "id": "EXP-40738357",
-      "name": "测试对比实验",
-      "description": "验证API功能正常",
-      "batchIds": [
-        "PF-001"
-      ],
-      "createdAt": "2026-06-21T11:18:58.357Z",
-      "updatedAt": "2026-06-21T11:18:58.357Z"
-    },
-    {
       "id": "EXP-00000001",
       "name": "构树皮 vs 桑皮",
       "description": "对比不同原料的发酵表现差异",
       "batchIds": [],
       "createdAt": "2026-06-10T00:00:00.000Z",
-      "updatedAt": "2026-06-10T00:00:00.000Z"
+      "updatedAt": "2026-06-21T11:35:51.683Z"
     }
   ]
 }
