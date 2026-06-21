@@ -180,5 +180,67 @@
         }
       ]
     }
+  ],
+  "fermentationRules": [
+    {
+      "id": "default",
+      "name": "默认规则",
+      "source": "*",
+      "isDefault": true,
+      "minDays": 7,
+      "maxDays": 30,
+      "temperatureMin": 15,
+      "temperatureMax": 35,
+      "abnormalKeywords": [
+        "霉",
+        "臭",
+        "腐",
+        "酸败",
+        "异味",
+        "发黑",
+        "结块",
+        "霉斑",
+        "发霉",
+        "腐败"
+      ],
+      "autoStatusRules": {
+        "onAbnormalKeyword": "异常观察",
+        "onTemperatureOutOfRange": "异常观察",
+        "onDaysReachedMin": "可抄纸",
+        "onDaysExceedMax": "异常观察"
+      },
+      "createdAt": "2026-06-21T10:25:42.883Z",
+      "updatedAt": "2026-06-21T10:25:42.884Z"
+    },
+    {
+      "id": "rule-goushupi",
+      "name": "构树皮发酵规则",
+      "source": "构树皮",
+      "isDefault": false,
+      "minDays": 7,
+      "maxDays": 21,
+      "temperatureMin": 18,
+      "temperatureMax": 32,
+      "abnormalKeywords": [
+        "霉",
+        "臭",
+        "腐",
+        "酸败",
+        "异味",
+        "发黑",
+        "结块",
+        "霉斑",
+        "发霉",
+        "腐败"
+      ],
+      "autoStatusRules": {
+        "onAbnormalKeyword": "异常观察",
+        "onTemperatureOutOfRange": "异常观察",
+        "onDaysReachedMin": "可抄纸",
+        "onDaysExceedMax": "异常观察"
+      },
+      "createdAt": "2026-06-21T10:25:42.884Z",
+      "updatedAt": "2026-06-21T10:25:42.884Z"
+    }
   ]
 }

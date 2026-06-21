@@ -1,8 +1,14 @@
-import { loadDb, saveDb, body, send, newId, computeStats, summarize, stages, newVatId, getVatById, computeVatBoard, parseObservationText, previewBatchImport, applyBatchImport, applyBatchInspections, validateInspectionRecord } from "../lib/db.js";
+import {
+  loadDb, loadDbWithMigration, saveDb, body, send, newId, computeStats, summarize, stages,
+  newVatId, getVatById, computeVatBoard, parseObservationText, previewBatchImport,
+  applyBatchImport, applyBatchInspections, validateInspectionRecord,
+  listRules, getRuleById, createRule, updateRule, deleteRule, findRuleForSource,
+  evaluateFermentationStatus, isAbnormalObservation, ruleFields, autoStatusOptions,
+} from "../lib/db.js";
 import { buildAllTimeline, uniqueValues } from "../lib/timeline.js";
 
 export async function handleApi(req, res, url, method) {
-  const db = await loadDb();
+  const db = await loadDbWithMigration();
 
   if (method === "GET" && url.pathname === "/api/items") {
     return send(res, 200, db.items.map(summarize));
@@ -51,16 +57,21 @@ export async function handleApi(req, res, url, method) {
     const abnormal =
       String(input.abnormal || "").includes("是") || String(input.abnormal || "").includes("有");
     item.observations ||= [];
-    item.observations.push({ at: new Date().toISOString(), ...input, abnormal });
-    item.days = Number(item.days || 0) + 1;
-    item.status = abnormal ? "异常观察" : Number(item.days) >= 7 ? "可抄纸" : "发酵中";
+    const observation = { at: new Date().toISOString(), ...input, abnormal };
+    item.observations.push(observation);
+    const evaluation = evaluateFermentationStatus(db, item, input);
+    item.days = evaluation.newDays;
+    item.status = evaluation.nextStatus;
+    const rule = evaluation.rule;
+    const reasonNote = evaluation.reasons.length > 0 ? "（判定依据：" + evaluation.reasons.join("；") + "，规则：" + rule.name + "）" : "";
     item.logs.push({
       at: new Date().toISOString(),
       step: "观察",
-      note: "温度" + (input.temperature || "") + "，" + (input.smell || "") + "，" + (input.fiber || ""),
+      note: "温度" + (input.temperature || "") + "，" + (input.smell || "") + "，" + (input.fiber || "") + reasonNote,
+      abnormal: evaluation.isAbnormal,
     });
     await saveDb(db);
-    return send(res, 201, item);
+    return send(res, 201, { ...item, evaluation });
   }
 
   if (method === "GET" && url.pathname === "/api/stats") {
@@ -171,6 +182,74 @@ export async function handleApi(req, res, url, method) {
       successCount: results.success.length,
       failedCount: results.failed.length,
     });
+  }
+
+  if (method === "GET" && url.pathname === "/api/rules") {
+    return send(res, 200, {
+      rules: listRules(db),
+      fields: ruleFields,
+      autoStatusOptions,
+    });
+  }
+
+  if (method === "GET" && url.pathname === "/api/rules/meta") {
+    return send(res, 200, {
+      fields: ruleFields,
+      autoStatusOptions,
+    });
+  }
+
+  const ruleMatch = url.pathname.match(/^\/api\/rules\/([^/]+)$/);
+  if (ruleMatch && method === "GET") {
+    const rule = getRuleById(db, ruleMatch[1]);
+    if (!rule) return send(res, 404, { error: "rule_not_found" });
+    return send(res, 200, rule);
+  }
+
+  if (method === "POST" && url.pathname === "/api/rules") {
+    const input = await body(req);
+    const result = createRule(db, input);
+    if (!result.success) {
+      return send(res, 400, { error: "validation_error", errors: result.errors });
+    }
+    await saveDb(db);
+    return send(res, 201, result.rule);
+  }
+
+  if (ruleMatch && method === "PATCH") {
+    const input = await body(req);
+    const result = updateRule(db, ruleMatch[1], input);
+    if (!result.success) {
+      return send(res, 400, { error: "validation_error", errors: result.errors });
+    }
+    await saveDb(db);
+    return send(res, 200, result.rule);
+  }
+
+  if (ruleMatch && method === "DELETE") {
+    const result = deleteRule(db, ruleMatch[1]);
+    if (!result.success) {
+      return send(res, 400, { error: "delete_error", errors: result.errors });
+    }
+    await saveDb(db);
+    return send(res, 200, result.rule);
+  }
+
+  if (method === "POST" && url.pathname === "/api/rules/evaluate") {
+    const input = await body(req);
+    const item = input.item;
+    const observation = input.observation || {};
+    if (!item) {
+      return send(res, 400, { error: "missing_item", message: "缺少批次信息" });
+    }
+    const evaluation = evaluateFermentationStatus(db, item, observation);
+    return send(res, 200, evaluation);
+  }
+
+  if (method === "GET" && url.pathname === "/api/rules/for-source") {
+    const source = url.searchParams.get("source") || "";
+    const rule = findRuleForSource(db, source);
+    return send(res, 200, { rule, source });
   }
 
   return null;
