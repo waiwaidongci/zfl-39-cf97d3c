@@ -11,7 +11,7 @@ export function mainPage() {
   <link rel="stylesheet" href="/public/main.css">
 </head>
 <body>
-  <header><div><h1>古法纸浆发酵记录</h1><div class="meta">纸浆批次、浸泡缸、换水和异常观察 · <a class="nav-link" href="/timeline">批次时间轴与异常复盘 →</a></div></div><button id="reload">刷新</button></header>
+  <header><div><h1>古法纸浆发酵记录</h1><div class="meta">纸浆批次、浸泡缸、换水和异常观察 · <a class="nav-link" href="/board">浸泡缸容量与排程看板</a> · <a class="nav-link" href="/timeline">批次时间轴与异常复盘 →</a></div></div><button id="reload">刷新</button></header>
   <main>
     <section>
       <form id="createForm"><h2>新增纸浆批次</h2><div id="fields"></div><label>初始状态</label><select name="status">${stages.map((s) => "<option>" + s + "</option>").join("")}</select><button>保存纸浆批次</button></form>
@@ -33,6 +33,7 @@ export function mainPage() {
     const statsEl = document.querySelector('#stats');
     const itemSelect = document.querySelector('#itemSelect');
     let items = [];
+    let vats = [];
     async function api(path, options) {
       const res = await fetch(path, options && options.body ? { ...options, headers:{ 'Content-Type':'application/json' } } : options);
       const data = await res.json();
@@ -40,7 +41,14 @@ export function mainPage() {
       return data;
     }
     function renderForms() {
-      document.querySelector('#fields').innerHTML = fields.map(([key,label,type]) => '<label>'+label+'</label><input name="'+key+'" type="'+type+'" '+(key==='code'?'required':'')+'>').join('');
+      const fieldsHtml = fields.map(([key,label,type]) => {
+        if (key === 'vat') {
+          return '<label>'+label+'</label><select name="vat" data-vat-select><option value="">请选择</option>' + vats.map(v => '<option value="'+v.name+'" data-id="'+v.id+'">'+v.name+' (容量:'+v.capacity+')</option>').join('') + '</select>';
+        }
+        if (key === 'vatId') return '';
+        return '<label>'+label+'</label><input name="'+key+'" type="'+type+'" '+(key==='code'?'required':'')+'>';
+      }).join('');
+      document.querySelector('#fields').innerHTML = fieldsHtml;
       document.querySelector('#extraFields').innerHTML = extraFields.map(([key,label]) => '<label>'+label+'</label><input name="'+key+'">').join('');
     }
     function render() {
@@ -55,16 +63,32 @@ export function mainPage() {
       document.querySelectorAll('[data-note]').forEach(btn => btn.onclick = async () => { const id = btn.dataset.note; const note = prompt('记录备注'); if (note) { await api('/api/items/'+id+'/logs', { method:'POST', body: JSON.stringify({ step:'备注', note }) }); await load(); } });
     }
     function cardHtml(item) {
-      const main = fields.slice(0,4).map(([key,label]) => '<div><b>'+label+'</b> '+(item[key] ?? '')+'</div>').join('');
+      const main = fields.filter(([k]) => k !== 'vatId' && k !== 'startDate' && k !== 'expectedDays').slice(0,4).map(([key,label]) => '<div><b>'+label+'</b> '+(item[key] ?? '')+'</div>').join('');
       const tasks = (item.tasks || []).map(t => '<div class="meta">任务 '+t.position+' · '+t.status+' · '+t.tension+'</div>').join('');
       const logs = (item.logs || []).slice(-4).map(l => '<div>'+l.step+'：'+l.note+'</div>').join('');
       return '<article class="card"><h3>'+(item.code || item.id)+'</h3><span class="pill">'+item.status+'</span>'+main+tasks+'<label>状态</label><select data-status="'+(item.id || item.code)+'">'+stages.map(s => '<option '+(s===item.status?'selected':'')+'>'+s+'</option>').join('')+'</select><button class="secondary" data-note="'+(item.id || item.code)+'">追加备注</button><div class="logs meta">'+(logs || '暂无记录')+'</div></article>';
     }
-    async function load() { items = await api('/api/items'); render(); }
-    createForm.onsubmit = async event => { event.preventDefault(); await api('/api/items', { method:'POST', body: JSON.stringify(Object.fromEntries(new FormData(createForm).entries())) }); createForm.reset(); await load(); };
+    async function load() {
+      items = await api('/api/items');
+      vats = await api('/api/vats');
+      renderForms();
+      render();
+    }
+    createForm.onsubmit = async event => {
+      event.preventDefault();
+      const formData = Object.fromEntries(new FormData(createForm).entries());
+      const vatSelect = createForm.querySelector('[data-vat-select]');
+      if (vatSelect && vatSelect.value) {
+        const selectedOpt = vatSelect.options[vatSelect.selectedIndex];
+        formData.vatId = selectedOpt.dataset.id || '';
+      }
+      await api('/api/items', { method:'POST', body: JSON.stringify(formData) });
+      createForm.reset();
+      await load();
+    };
     actionForm.onsubmit = async event => { event.preventDefault(); await api('/api/items/'+itemSelect.value+'/action', { method:'POST', body: JSON.stringify(Object.fromEntries(new FormData(actionForm).entries())) }); actionForm.reset(); await load(); };
     document.querySelector('#statusFilter').onchange = render; document.querySelector('#search').oninput = render; document.querySelector('#reload').onclick = load;
-    renderForms(); load();
+    load();
   </script>
 </body>
 </html>`;

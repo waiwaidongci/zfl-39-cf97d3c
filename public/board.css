@@ -1,0 +1,354 @@
+.content {
+  padding: 22px 28px;
+}
+
+.board-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.bstat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.bstat span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.bstat strong {
+  display: block;
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.bstat.warn strong {
+  color: var(--warn);
+}
+
+.board-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+}
+
+.filter-group label {
+  margin: 0 0 4px;
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.vat-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vat-card.risk {
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+}
+
+.vat-card.overload {
+  border-color: #d97706;
+  background: #fff7ed;
+}
+
+.vat-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.vat-card.risk .vat-header,
+.vat-card.overload .vat-header {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.vat-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.vat-title h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.vat-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.overload-badge {
+  background: #fed7aa;
+  color: #92400e;
+}
+
+.overdue-badge {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.vat-capacity-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.vat-capacity-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s;
+}
+
+.vat-card.risk .vat-capacity-fill,
+.vat-card.overload .vat-capacity-fill {
+  background: var(--warn);
+}
+
+.vat-capacity-text {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.vat-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.vat-batches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 80px;
+}
+
+.empty-batch {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 20px 0;
+  font-style: italic;
+}
+
+.batch-card {
+  background: #fafaf7;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 10px 12px;
+}
+
+.batch-card.overdue {
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+}
+
+.batch-card.abnormal {
+  border-color: #eab308;
+  background: #fefce8;
+}
+
+.batch-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.batch-code {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.batch-status {
+  font-size: 11px;
+}
+
+.batch-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.batch-badge.overdue-badge {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.batch-badge.abnormal-badge {
+  background: #fde68a;
+  color: #854d0e;
+}
+
+.batch-info {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.batch-progress-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.batch-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.batch-card.overdue .batch-progress-fill {
+  background: var(--warn);
+}
+
+.batch-dates {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.vat-actions {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.vat-card.risk .vat-actions,
+.vat-card.overload .vat-actions {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+button.small {
+  padding: 6px 10px;
+  font-size: 12px;
+  flex: 1;
+}
+
+button.danger {
+  background: var(--warn);
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--panel);
+  border-radius: 10px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-close {
+  background: none;
+  color: var(--muted);
+  font-size: 24px;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--ink);
+}
+
+#vatForm {
+  padding: 18px;
+  border: none;
+  border-radius: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.empty-board {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--muted);
+  padding: 40px;
+  font-style: italic;
+}
+
+@media (max-width: 900px) {
+  .content {
+    padding: 16px;
+  }
+
+  .board-grid {
+    grid-template-columns: 1fr;
+  }
+}

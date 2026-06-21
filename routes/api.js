@@ -1,4 +1,4 @@
-import { loadDb, saveDb, body, send, newId, computeStats, summarize, stages } from "../lib/db.js";
+import { loadDb, saveDb, body, send, newId, computeStats, summarize, stages, newVatId, getVatById, computeVatBoard } from "../lib/db.js";
 import { buildAllTimeline, uniqueValues } from "../lib/timeline.js";
 
 export async function handleApi(req, res, url, method) {
@@ -75,6 +75,51 @@ export async function handleApi(req, res, url, method) {
     const vats = uniqueValues(db.items, "vat");
     const owners = uniqueValues(db.items, "owner");
     return send(res, 200, { events, vats, owners });
+  }
+
+  if (method === "GET" && url.pathname === "/api/vats") {
+    return send(res, 200, db.vats || []);
+  }
+
+  if (method === "POST" && url.pathname === "/api/vats") {
+    const input = await body(req);
+    const vat = {
+      id: newVatId(),
+      name: input.name || "",
+      capacity: Number(input.capacity) || 1,
+      location: input.location || "",
+      material: input.material || "",
+      note: input.note || "",
+    };
+    db.vats ||= [];
+    db.vats.push(vat);
+    await saveDb(db);
+    return send(res, 201, vat);
+  }
+
+  const vatPatch = url.pathname.match(/^\/api\/vats\/([^/]+)$/);
+  if (vatPatch && method === "PATCH") {
+    const vat = (db.vats || []).find((v) => v.id === vatPatch[1]);
+    if (!vat) return send(res, 404, { error: "vat_not_found" });
+    const input = await body(req);
+    Object.assign(vat, input);
+    vat.capacity = Number(vat.capacity) || 1;
+    await saveDb(db);
+    return send(res, 200, vat);
+  }
+
+  const vatDelete = url.pathname.match(/^\/api\/vats\/([^/]+)$/);
+  if (vatDelete && method === "DELETE") {
+    const idx = (db.vats || []).findIndex((v) => v.id === vatDelete[1]);
+    if (idx === -1) return send(res, 404, { error: "vat_not_found" });
+    const deleted = db.vats.splice(idx, 1)[0];
+    await saveDb(db);
+    return send(res, 200, deleted);
+  }
+
+  if (method === "GET" && url.pathname === "/api/board") {
+    const board = computeVatBoard(db);
+    return send(res, 200, { vats: board, stats: computeStats(db.items) });
   }
 
   return null;

@@ -1,17 +1,46 @@
 {
+  "vats": [
+    {
+      "id": "V-001",
+      "name": "一号缸",
+      "capacity": 3,
+      "location": "东车间A区",
+      "material": "青石",
+      "note": "大容量缸，适合构树皮"
+    },
+    {
+      "id": "V-002",
+      "name": "二号缸",
+      "capacity": 2,
+      "location": "东车间A区",
+      "material": "陶瓷",
+      "note": ""
+    },
+    {
+      "id": "V-003",
+      "name": "三号缸",
+      "capacity": 4,
+      "location": "西车间B区",
+      "material": "杉木",
+      "note": "传统木缸，透气性好"
+    }
+  ],
   "items": [
     {
       "code": "PF-001",
       "source": "构树皮",
       "vat": "三号缸",
+      "vatId": "V-003",
       "days": 6,
+      "expectedDays": 7,
+      "startDate": "2026-06-15",
       "owner": "林素",
       "status": "发酵中",
       "logs": [
         {
           "at": "2026-06-15",
-          "step": "观察",
-          "note": "温度24.6，气味微酸，纤维开始松散",
+          "step": "建档",
+          "note": "创建纸浆批次，入三号缸",
           "abnormal": false
         },
         {
