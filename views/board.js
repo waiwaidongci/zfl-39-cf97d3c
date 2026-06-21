@@ -14,7 +14,7 @@ export function boardPage() {
   <header>
     <div>
       <h1>浸泡缸容量与排程看板</h1>
-      <div class="meta">管理浸泡缸容量、发酵批次排程与超期预警 · <a class="nav-link" href="/batch-import">批量导入观察记录</a> · <a class="nav-link" href="/">← 返回主页</a></div>
+      <div class="meta">管理浸泡缸容量、发酵批次排程与超期预警 · <a class="nav-link" href="/report">📋 可抄纸评估报告</a> · <a class="nav-link" href="/batch-import">批量导入观察记录</a> · <a class="nav-link" href="/">← 返回主页</a></div>
     </div>
     <div>
       <button id="addVatBtn" class="secondary">新增浸泡缸</button>
@@ -159,6 +159,8 @@ export function boardPage() {
         dateInfo.push('<span class="warn">无法计算预计日期</span>');
       }
 
+      const reportBtn = item.status === '可抄纸' ? '<div class="batch-actions"><button class="secondary small" data-report="' + (item.id || item.code) + '">📋 评估报告</button></div>' : '';
+
       return '<div class="' + cls.join(' ') + '">' +
         '<div class="batch-head">' +
           '<span class="batch-code">' + (item.code || item.id) + '</span>' +
@@ -176,6 +178,7 @@ export function boardPage() {
           '</div>' +
         '</div>' +
         '<div class="batch-dates">' + dateInfo.join('') + '</div>' +
+        reportBtn +
       '</div>';
     }
 
@@ -227,6 +230,9 @@ export function boardPage() {
       });
       document.querySelectorAll('[data-delete]').forEach(btn => {
         btn.onclick = () => deleteVat(btn.dataset.delete);
+      });
+      document.querySelectorAll('[data-report]').forEach(btn => {
+        btn.onclick = () => { window.location.href = '/report/' + encodeURIComponent(btn.dataset.report); };
       });
     }
 

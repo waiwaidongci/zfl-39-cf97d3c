@@ -27,6 +27,87 @@
   ],
   "items": [
     {
+      "code": "PF-002",
+      "source": "桑皮",
+      "vat": "一号缸",
+      "vatId": "V-001",
+      "days": 8,
+      "expectedDays": 7,
+      "startDate": "2026-06-13",
+      "owner": "林素",
+      "status": "可抄纸",
+      "logs": [
+        {
+          "at": "2026-06-13",
+          "step": "建档",
+          "note": "创建纸浆批次，入一号缸",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-15T08:30:00Z",
+          "step": "观察",
+          "note": "温度23.5，正常酸味，较松散",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-17T09:10:00Z",
+          "step": "观察",
+          "note": "温度24.8，正常酸味，松散，换水:已换水",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-19T08:45:00Z",
+          "step": "观察",
+          "note": "温度25.2，微酸，松散",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:00:00Z",
+          "step": "观察",
+          "note": "温度25.8，正常酸味，纤维松散均匀，已达到可抄纸标准",
+          "abnormal": false
+        }
+      ],
+      "observations": [
+        {
+          "at": "2026-06-15T08:30:00Z",
+          "temperature": "23.5",
+          "smell": "正常酸味",
+          "fiber": "较松散",
+          "changedWater": "未换水",
+          "abnormalNote": "",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-17T09:10:00Z",
+          "temperature": "24.8",
+          "smell": "正常酸味",
+          "fiber": "松散",
+          "changedWater": "已换水",
+          "abnormalNote": "",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-19T08:45:00Z",
+          "temperature": "25.2",
+          "smell": "微酸",
+          "fiber": "松散",
+          "changedWater": "未换水",
+          "abnormalNote": "",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-21T09:00:00Z",
+          "temperature": "25.8",
+          "smell": "正常酸味",
+          "fiber": "松散",
+          "changedWater": "已换水",
+          "abnormalNote": "",
+          "abnormal": false
+        }
+      ]
+    },
+    {
       "code": "PF-001",
       "source": "构树皮",
       "vat": "三号缸",

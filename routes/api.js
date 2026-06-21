@@ -6,7 +6,7 @@ import {
   evaluateFermentationStatus, isAbnormalObservation, ruleFields, autoStatusOptions,
   listExperiments, getExperimentById, createExperiment, updateExperiment,
   deleteExperiment, addBatchesToExperiment, removeBatchFromExperiment,
-  getExperimentWithAnalysis,
+  getExperimentWithAnalysis, buildReadinessReport, listReadyBatches,
 } from "../lib/db.js";
 import { buildAllTimeline, uniqueValues } from "../lib/timeline.js";
 
@@ -316,6 +316,20 @@ export async function handleApi(req, res, url, method) {
     }
     await saveDb(db);
     return send(res, 200, result.experiment);
+  }
+
+  if (method === "GET" && url.pathname === "/api/reports/ready-batches") {
+    return send(res, 200, { batches: listReadyBatches(db) });
+  }
+
+  const reportMatch = url.pathname.match(/^\/api\/reports\/readiness\/([^/]+)$/);
+  if (reportMatch && method === "GET") {
+    const report = buildReadinessReport(db, reportMatch[1]);
+    if (!report) return send(res, 404, { error: "batch_not_found", message: "找不到该批次" });
+    if (!report.basicInfo.isReady) {
+      return send(res, 400, { error: "not_ready", message: "该批次状态不是可抄纸，无法生成评估报告" });
+    }
+    return send(res, 200, report);
   }
 
   return null;

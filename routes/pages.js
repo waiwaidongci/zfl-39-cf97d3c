@@ -6,6 +6,7 @@ import { batchImportPage } from "../views/batch-import.js";
 import { mobileInspectionPage } from "../views/mobile-inspection.js";
 import { rulesPage } from "../views/rules.js";
 import { experimentsPage } from "../views/experiments.js";
+import { reportPage } from "../views/report.js";
 
 export function handlePages(req, res, url) {
   if (url.pathname === "/") {
@@ -34,6 +35,15 @@ export function handlePages(req, res, url) {
   }
   if (url.pathname === "/experiments") {
     html(res, experimentsPage());
+    return true;
+  }
+  if (url.pathname === "/report") {
+    html(res, reportPage());
+    return true;
+  }
+  const reportMatch = url.pathname.match(/^\/report\/([^/]+)$/);
+  if (reportMatch) {
+    html(res, reportPage(reportMatch[1]));
     return true;
   }
   return false;
