@@ -1,0 +1,45 @@
+main {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 22px;
+  padding: 22px 28px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.stat strong { display: block; font-size: 24px; }
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.toolbar select, .toolbar input { width: auto; min-width: 160px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.card { display: grid; gap: 8px; }
+
+.logs {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  max-height: 90px;
+  overflow: auto;
+}
+
+.mt-14 { margin-top: 14px; }
+
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; padding: 16px; }
+}

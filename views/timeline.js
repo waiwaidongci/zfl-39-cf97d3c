@@ -5,53 +5,8 @@ export function timelinePage() {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>批次时间轴与异常复盘</title>
-  <style>
-    :root { --bg:#f1f3ef; --panel:#fff; --ink:#20241f; --muted:#687066; --line:#d4ddd0; --accent:#526f43; --warn:#9b4937; --warn-bg:#fdf0ed; --warn-border:#e8a598; --obs-bg:#f0f5ee; --obs-border:#b5c9ab; }
-    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--ink); font-family:Arial,"PingFang SC",sans-serif; }
-    header { padding:22px 28px; background:#fff; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:16px; align-items:center; flex-wrap:wrap; }
-    h1 { margin:0; font-size:24px; }
-    .nav-link { color:var(--accent); text-decoration:none; font-size:14px; }
-    .meta { color:var(--muted); font-size:13px; }
-    .content { padding:22px 28px; max-width:960px; margin:0 auto; }
-
-    .filters { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; }
-    .filters label { display:block; margin:0 0 4px; color:var(--muted); font-size:12px; }
-    .filters input, .filters select { width:180px; border:1px solid var(--line); border-radius:6px; padding:8px; font:inherit; background:#fff; }
-    .filters button { border:0; border-radius:6px; background:var(--accent); color:#fff; padding:8px 16px; font-weight:700; cursor:pointer; align-self:flex-end; }
-    .filters button.reset { background:#69736a; }
-
-    .summary { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
-    .summary .chip { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 16px; font-size:14px; }
-    .summary .chip strong { font-size:20px; display:block; margin-bottom:2px; }
-    .summary .chip.warn-chip { border-color:var(--warn-border); background:var(--warn-bg); }
-    .summary .chip.warn-chip strong { color:var(--warn); }
-
-    .timeline { position:relative; padding-left:32px; }
-    .timeline::before { content:''; position:absolute; left:11px; top:0; bottom:0; width:2px; background:var(--line); }
-    .tl-event { position:relative; margin-bottom:18px; }
-    .tl-dot { position:absolute; left:-27px; top:6px; width:14px; height:14px; border-radius:50%; background:var(--accent); border:2px solid #fff; box-shadow:0 0 0 2px var(--accent); }
-    .tl-event.abnormal .tl-dot { background:var(--warn); box-shadow:0 0 0 2px var(--warn); }
-    .tl-card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
-    .tl-event.abnormal .tl-card { border-color:var(--warn-border); background:var(--warn-bg); }
-    .tl-event.observation .tl-card { border-left:3px solid var(--obs-border); }
-    .tl-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
-    .tl-step { font-weight:700; font-size:15px; }
-    .tl-event.abnormal .tl-step { color:var(--warn); }
-    .tl-time { color:var(--muted); font-size:12px; white-space:nowrap; }
-    .tl-batch { font-size:12px; color:var(--muted); }
-    .tl-batch span { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 7px; margin-right:4px; background:#f6f8f4; }
-    .tl-note { font-size:14px; line-height:1.5; }
-    .tl-badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; margin-left:6px; vertical-align:middle; }
-    .tl-badge.abnormal-badge { background:var(--warn); color:#fff; }
-    .tl-badge.obs-badge { background:var(--obs-border); color:var(--ink); }
-
-    .empty { text-align:center; color:var(--muted); padding:60px 20px; font-size:15px; }
-
-    @media (max-width:700px) {
-      .content { padding:16px; }
-      .filters input, .filters select { width:100%; }
-    }
-  </style>
+  <link rel="stylesheet" href="/public/common.css">
+  <link rel="stylesheet" href="/public/timeline.css">
 </head>
 <body>
   <header>
