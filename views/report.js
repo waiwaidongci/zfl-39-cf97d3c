@@ -217,24 +217,47 @@ export function reportPage(batchCode) {
       window.print();
     }
 
-    function exportPrintPage() {
+    async function fetchCssText(href) {
+      try {
+        const res = await fetch(href);
+        if (!res.ok) return '';
+        return await res.text();
+      } catch (e) {
+        console.warn('加载CSS失败:', href, e);
+        return '';
+      }
+    }
+
+    async function exportPrintPage() {
       if (!currentReport) return;
-      const sheetHtml = document.querySelector('.report-sheet').outerHTML;
-      const cssLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(l => l.outerHTML).join('\\n');
-      const exportHtml = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>可抄纸评估报告 - ' + currentReport.basicInfo.code + '</title>\\n' +
-        cssLinks + '\\n<style>@media print { .no-print { display: none !important; } body { background: #fff; } }</style></head>' +
-        '<body>' + sheetHtml +
-        '<scri' + 'pt>window.onload = function() { setTimeout(function() { window.print(); }, 300); };</sc' + 'ript>' +
-        '</body></html>';
-      const blob = new Blob([exportHtml], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = '可抄纸评估报告_' + currentReport.basicInfo.code + '_' + new Date().toISOString().slice(0, 10) + '.html';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      const btn = document.getElementById('exportBtn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '生成中...';
+      try {
+        const cssHrefs = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(l => l.href);
+        const cssTexts = await Promise.all(cssHrefs.map(href => fetchCssText(href)));
+        const inlineStyles = cssTexts.filter(Boolean).map(c => '\\n<style>\\n' + c + '\\n</style>\\n').join('');
+        const printExtra = '<style>@media print { .no-print { display: none !important; } } body { background: #fff; margin: 0; padding: 0; } #reportMain { padding: 0; max-width: none; } .report-sheet { border: none; box-shadow: none; padding: 0; border-radius: 0; }</style>';
+        const sheetHtml = document.querySelector('.report-sheet').outerHTML;
+        const exportHtml = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>可抄纸评估报告 - ' + currentReport.basicInfo.code + '</title>' +
+          inlineStyles + printExtra + '</head>' +
+          '<body><main id="reportMain">' + sheetHtml + '</main>' +
+          '<scri' + 'pt>window.onload = function() { setTimeout(function() { window.print(); }, 300); };</sc' + 'ript>' +
+          '</body></html>';
+        const blob = new Blob([exportHtml], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '可抄纸评估报告_' + currentReport.basicInfo.code + '_' + new Date().toISOString().slice(0, 10) + '.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
     }
 
     async function init() {
