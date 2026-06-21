@@ -4,6 +4,9 @@ import {
   applyBatchImport, applyBatchInspections, validateInspectionRecord,
   listRules, getRuleById, createRule, updateRule, deleteRule, findRuleForSource,
   evaluateFermentationStatus, isAbnormalObservation, ruleFields, autoStatusOptions,
+  listExperiments, getExperimentById, createExperiment, updateExperiment,
+  deleteExperiment, addBatchesToExperiment, removeBatchFromExperiment,
+  getExperimentWithAnalysis,
 } from "../lib/db.js";
 import { buildAllTimeline, uniqueValues } from "../lib/timeline.js";
 
@@ -250,6 +253,69 @@ export async function handleApi(req, res, url, method) {
     const source = url.searchParams.get("source") || "";
     const rule = findRuleForSource(db, source);
     return send(res, 200, { rule, source });
+  }
+
+  if (method === "GET" && url.pathname === "/api/experiments") {
+    const experiments = listExperiments(db).map((e) => getExperimentWithAnalysis(db, e));
+    return send(res, 200, experiments);
+  }
+
+  if (method === "POST" && url.pathname === "/api/experiments") {
+    const input = await body(req);
+    const result = createExperiment(db, input);
+    if (!result.success) {
+      return send(res, 400, { error: "validation_error", errors: result.errors });
+    }
+    await saveDb(db);
+    return send(res, 201, result.experiment);
+  }
+
+  const expMatch = url.pathname.match(/^\/api\/experiments\/([^/]+)$/);
+  if (expMatch && method === "GET") {
+    const experiment = getExperimentById(db, expMatch[1]);
+    if (!experiment) return send(res, 404, { error: "experiment_not_found" });
+    return send(res, 200, getExperimentWithAnalysis(db, experiment));
+  }
+
+  if (expMatch && method === "PATCH") {
+    const input = await body(req);
+    const result = updateExperiment(db, expMatch[1], input);
+    if (!result.success) {
+      return send(res, 400, { error: "validation_error", errors: result.errors });
+    }
+    await saveDb(db);
+    return send(res, 200, result.experiment);
+  }
+
+  if (expMatch && method === "DELETE") {
+    const result = deleteExperiment(db, expMatch[1]);
+    if (!result.success) {
+      return send(res, 400, { error: "delete_error", errors: result.errors });
+    }
+    await saveDb(db);
+    return send(res, 200, result.experiment);
+  }
+
+  const expAddBatches = url.pathname.match(/^\/api\/experiments\/([^/]+)\/batches$/);
+  if (expAddBatches && method === "POST") {
+    const input = await body(req);
+    const batchIds = Array.isArray(input) ? input : input.batchIds || [];
+    const result = addBatchesToExperiment(db, expAddBatches[1], batchIds);
+    if (!result.success) {
+      return send(res, 400, { error: "operation_error", errors: result.errors });
+    }
+    await saveDb(db);
+    return send(res, 200, { experiment: result.experiment, addedCount: result.addedCount });
+  }
+
+  const expRemoveBatch = url.pathname.match(/^\/api\/experiments\/([^/]+)\/batches\/([^/]+)$/);
+  if (expRemoveBatch && method === "DELETE") {
+    const result = removeBatchFromExperiment(db, expRemoveBatch[1], expRemoveBatch[2]);
+    if (!result.success) {
+      return send(res, 400, { error: "operation_error", errors: result.errors });
+    }
+    await saveDb(db);
+    return send(res, 200, result.experiment);
   }
 
   return null;

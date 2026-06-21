@@ -5,6 +5,7 @@ import { boardPage } from "../views/board.js";
 import { batchImportPage } from "../views/batch-import.js";
 import { mobileInspectionPage } from "../views/mobile-inspection.js";
 import { rulesPage } from "../views/rules.js";
+import { experimentsPage } from "../views/experiments.js";
 
 export function handlePages(req, res, url) {
   if (url.pathname === "/") {
@@ -29,6 +30,10 @@ export function handlePages(req, res, url) {
   }
   if (url.pathname === "/rules") {
     html(res, rulesPage());
+    return true;
+  }
+  if (url.pathname === "/experiments") {
+    html(res, experimentsPage());
     return true;
   }
   return false;
