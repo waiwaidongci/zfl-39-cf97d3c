@@ -410,6 +410,203 @@ PF-999,25,正常酸味,松散,否,否`;
     }
   }
 
+  console.log("\n17. 非默认配置 - 温度超限使用 onTemperatureOutOfRange 规则测试");
+  {
+    const db = makeDb();
+    const customRule = {
+      id: "rule-custom-temp",
+      name: "自定义温度规则",
+      source: "竹浆",
+      isDefault: false,
+      minDays: 10,
+      maxDays: 25,
+      temperatureMin: 20,
+      temperatureMax: 28,
+      abnormalKeywords: ["霉", "臭", "腐"],
+      autoStatusRules: {
+        onAbnormalKeyword: "异常观察",
+        onTemperatureOutOfRange: "发酵中",
+        onDaysReachedMin: "可抄纸",
+        onDaysExceedMax: "异常观察",
+      },
+    };
+    db.fermentationRules.push(customRule);
+    const item = { source: "竹浆", days: 5, status: "发酵中" };
+
+    const obs1 = { temperature: "15", smell: "正常酸味", fiber: "松散", abnormal: "" };
+    const eval1 = evaluateFermentationStatus(db, item, obs1);
+    assertEq(eval1.nextStatus, "发酵中", "温度15℃低于下限20℃，onTemperatureOutOfRange=发酵中，状态应为发酵中（非默认值生效）");
+    assertEq(eval1.triggered.temperatureOutOfRange, true, "triggered 应标记温度超限为 true");
+    assertEq(eval1.triggered.abnormalKeyword, false, "关键词未触发");
+    assert(eval1.reasons.some(r => r.includes("温度超出范围")), "原因应包含温度超出范围");
+
+    const obs2 = { temperature: "30", smell: "正常酸味", fiber: "松散", abnormal: "" };
+    const eval2 = evaluateFermentationStatus(db, item, obs2);
+    assertEq(eval2.nextStatus, "发酵中", "温度30℃高于上限28℃，onTemperatureOutOfRange=发酵中，状态应为发酵中（非默认值生效）");
+    assertEq(eval2.triggered.temperatureOutOfRange, true, "triggered 应标记温度超限为 true");
+  }
+
+  console.log("\n18. 非默认配置 - 关键词异常使用 onAbnormalKeyword 规则测试");
+  {
+    const db = makeDb();
+    const customRule = {
+      id: "rule-custom-kw",
+      name: "自定义关键词规则",
+      source: "桑树皮",
+      isDefault: false,
+      minDays: 7,
+      maxDays: 20,
+      temperatureMin: 15,
+      temperatureMax: 35,
+      abnormalKeywords: ["霉", "臭"],
+      autoStatusRules: {
+        onAbnormalKeyword: "发酵中",
+        onTemperatureOutOfRange: "异常观察",
+        onDaysReachedMin: "可抄纸",
+        onDaysExceedMax: "异常观察",
+      },
+    };
+    db.fermentationRules.push(customRule);
+    const item = { source: "桑树皮", days: 5, status: "发酵中" };
+
+    const obs1 = { temperature: "25", smell: "有霉味", fiber: "松散", abnormal: "" };
+    const eval1 = evaluateFermentationStatus(db, item, obs1);
+    assertEq(eval1.nextStatus, "发酵中", "关键词命中霉，onAbnormalKeyword=发酵中，状态应为发酵中（非默认值生效）");
+    assertEq(eval1.triggered.abnormalKeyword, true, "triggered 应标记关键词异常为 true");
+    assertEq(eval1.triggered.temperatureOutOfRange, false, "温度未触发");
+
+    const obs2 = { temperature: "25", smell: "正常酸味", fiber: "松散", abnormal: "是" };
+    const eval2 = evaluateFermentationStatus(db, item, obs2);
+    assertEq(eval2.nextStatus, "发酵中", "异常复选框勾选，也使用 onAbnormalKeyword=发酵中");
+    assertEq(eval2.triggered.abnormalCheckbox, true, "triggered 应标记异常复选框为 true");
+  }
+
+  console.log("\n19. 非默认配置 - 天数阈值使用自定义值测试");
+  {
+    const db = makeDb();
+    const customRule = {
+      id: "rule-custom-days",
+      name: "自定义天数规则",
+      source: "稻草浆",
+      isDefault: false,
+      minDays: 14,
+      maxDays: 18,
+      temperatureMin: 15,
+      temperatureMax: 35,
+      abnormalKeywords: ["霉"],
+      autoStatusRules: {
+        onAbnormalKeyword: "异常观察",
+        onTemperatureOutOfRange: "异常观察",
+        onDaysReachedMin: "发酵中",
+        onDaysExceedMax: "可抄纸",
+      },
+    };
+    db.fermentationRules.push(customRule);
+    const obs = { temperature: "25", smell: "正常酸味", fiber: "松散", abnormal: "" };
+
+    const item1 = { source: "稻草浆", days: 10, status: "发酵中" };
+    const eval1 = evaluateFermentationStatus(db, item1, obs);
+    assertEq(eval1.nextStatus, "发酵中", "10+1=11天 < minDays=14天，应继续发酵中");
+    assertEq(eval1.triggered.daysReachedMin, false, "尚未达到最短天数");
+    assertEq(eval1.newDays, 11, "天数应为11天");
+
+    const item2 = { source: "稻草浆", days: 13, status: "发酵中" };
+    const eval2 = evaluateFermentationStatus(db, item2, obs);
+    assertEq(eval2.nextStatus, "发酵中", "13+1=14天达到minDays=14，但onDaysReachedMin=发酵中（非默认值生效）");
+    assertEq(eval2.triggered.daysReachedMin, true, "triggered 应标记达到最短天数为 true");
+
+    const item3 = { source: "稻草浆", days: 17, status: "发酵中" };
+    const eval3 = evaluateFermentationStatus(db, item3, obs);
+    assertEq(eval3.nextStatus, "发酵中", "17+1=18天等于maxDays=18，未超限");
+
+    const item4 = { source: "稻草浆", days: 18, status: "发酵中" };
+    const eval4 = evaluateFermentationStatus(db, item4, obs);
+    assertEq(eval4.nextStatus, "可抄纸", "18+1=19天 > maxDays=18，onDaysExceedMax=可抄纸（非默认值生效）");
+    assertEq(eval4.triggered.daysExceedMax, true, "triggered 应标记超过最长天数为 true");
+    assert(eval4.reasons.some(r => r.includes("超过最长发酵天数")), "原因应包含超过最长发酵天数");
+  }
+
+  console.log("\n20. 非默认配置 - 温度超限+关键词同时触发时优先级测试");
+  {
+    const db = makeDb();
+    const customRule = {
+      id: "rule-priority",
+      name: "优先级测试规则",
+      source: "麻纤维",
+      isDefault: false,
+      minDays: 7,
+      maxDays: 21,
+      temperatureMin: 20,
+      temperatureMax: 30,
+      abnormalKeywords: ["霉", "臭"],
+      autoStatusRules: {
+        onAbnormalKeyword: "可抄纸",
+        onTemperatureOutOfRange: "发酵中",
+        onDaysReachedMin: "可抄纸",
+        onDaysExceedMax: "异常观察",
+      },
+    };
+    db.fermentationRules.push(customRule);
+    const item = { source: "麻纤维", days: 5, status: "发酵中" };
+
+    const obs1 = { temperature: "15", smell: "霉味严重", fiber: "松散", abnormal: "" };
+    const eval1 = evaluateFermentationStatus(db, item, obs1);
+    assertEq(eval1.nextStatus, "可抄纸", "温度超限(发酵中)+关键词(可抄纸)同时触发，优先级取关键词的可抄纸");
+    assertEq(eval1.triggered.temperatureOutOfRange, true, "温度超限确实被触发");
+    assertEq(eval1.triggered.abnormalKeyword, true, "关键词异常确实被触发");
+    assert(eval1.reasons.some(r => r.includes("温度超出范围")), "原因同时包含温度超限");
+    assert(eval1.reasons.some(r => r.includes("异常关键词")), "原因同时包含关键词异常");
+
+    const obs2 = { temperature: "25", smell: "正常酸味", fiber: "松散", abnormal: "" };
+    const eval2 = evaluateFermentationStatus(db, item, obs2);
+    assertEq(eval2.nextStatus, "发酵中", "正常温度+无关键词+5天，应继续发酵中");
+    assertEq(eval2.triggered.temperatureOutOfRange, false, "温度未超限");
+    assertEq(eval2.triggered.abnormalKeyword, false, "无关键词异常");
+  }
+
+  console.log("\n21. 非默认配置 - triggered 字段全面验证");
+  {
+    const db = makeDb();
+    const rule = {
+      id: "rule-triggered",
+      name: "Triggered测试规则",
+      source: "皮料A",
+      isDefault: false,
+      minDays: 5,
+      maxDays: 10,
+      temperatureMin: 20,
+      temperatureMax: 30,
+      abnormalKeywords: ["霉"],
+      autoStatusRules: {
+        onAbnormalKeyword: "异常观察",
+        onTemperatureOutOfRange: "异常观察",
+        onDaysReachedMin: "可抄纸",
+        onDaysExceedMax: "异常观察",
+      },
+    };
+    db.fermentationRules.push(rule);
+
+    const case1 = evaluateFermentationStatus(db, { source: "皮料A", days: 3 }, { temperature: "25", smell: "正常", fiber: "松散" });
+    assertEq(case1.triggered.abnormalCheckbox, false, "case1: 未勾选异常");
+    assertEq(case1.triggered.abnormalKeyword, false, "case1: 无关键词异常");
+    assertEq(case1.triggered.temperatureOutOfRange, false, "case1: 温度正常");
+    assertEq(case1.triggered.daysReachedMin, false, "case1: 未达到最短天数");
+    assertEq(case1.triggered.daysExceedMax, false, "case1: 未超过最长天数");
+
+    const case2 = evaluateFermentationStatus(db, { source: "皮料A", days: 6 }, { temperature: "25", smell: "正常", fiber: "松散" });
+    assertEq(case2.triggered.daysReachedMin, true, "case2: 达到最短天数");
+
+    const case3 = evaluateFermentationStatus(db, { source: "皮料A", days: 12 }, { temperature: "25", smell: "正常", fiber: "松散" });
+    assertEq(case3.triggered.daysExceedMax, true, "case3: 超过最长天数");
+    assertEq(case3.triggered.daysReachedMin, false, "case3: 超限时daysReachedMin应为false");
+
+    const case4 = evaluateFermentationStatus(db, { source: "皮料A", days: 2 }, { temperature: "15", smell: "有霉味", fiber: "松散", abnormal: "是" });
+    assertEq(case4.triggered.abnormalCheckbox, true, "case4: 勾选异常");
+    assertEq(case4.triggered.abnormalKeyword, true, "case4: 关键词命中");
+    assertEq(case4.triggered.temperatureOutOfRange, true, "case4: 温度超限");
+    assertEq(case4.triggered.daysReachedMin, false, "case4: 天数不足不影响其他triggered");
+  }
+
   console.log("\n" + "=".repeat(50));
   console.log("测试完成:", passed, "通过,", failed, "失败");
   if (failures.length > 0) {
