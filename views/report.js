@@ -93,6 +93,22 @@ export function reportPage(batchCode) {
           '</tbody></table>'
         : '<div class="no-abnormal">✅ 发酵过程无异常记录</div>';
 
+      const handoverHtml = report.handovers && report.handovers.length
+        ? '<table class="report-table handover-table"><thead><tr><th>时间</th><th>交出人</th><th>接收人</th><th>重点观察</th><th>未处理异常</th><th>换水提醒</th></tr></thead><tbody>' +
+          report.handovers.map(h =>
+            '<tr>' +
+              '<td>' + formatDateTime(h.createdAt) + '</td>' +
+              '<td>' + (h.handedOverBy || '-') + '</td>' +
+              '<td>' + (h.receivedBy || '-') + '</td>' +
+              '<td>' + (h.keyObservations || '-') + '</td>' +
+              '<td>' + (h.pendingAbnormalities || '-') + '</td>' +
+              '<td>' + (h.nextWaterChangeReminder || '-') + '</td>' +
+            '</tr>'
+          ).join('') +
+          '</tbody></table>' +
+          '<div class="report-link-row"><a href="/handover?batchCode=' + encodeURIComponent(bi.code) + '">查看该批次全部交接记录</a></div>'
+        : '<div class="meta">暂无交接记录</div>';
+
       const vatDetail = vi.id
         ? '<div class="info-grid">' +
             '<div><b>缸号</b><span>' + vi.name + ' (' + vi.id + ')</span></div>' +
@@ -166,7 +182,12 @@ export function reportPage(batchCode) {
           '</section>' +
 
           '<section class="report-section">' +
-            '<h2 class="section-title">六、评估结论与签字</h2>' +
+            '<h2 class="section-title">六、交接记录摘要 <span class="section-sub">（共 ' + ((report.handovers || []).length) + ' 条）</span></h2>' +
+            handoverHtml +
+          '</section>' +
+
+          '<section class="report-section">' +
+            '<h2 class="section-title">七、评估结论与签字</h2>' +
             '<div class="conclusion-box">' +
               '<div class="conclusion-item"><b>评估结论：</b><span>本批次已达到可抄纸标准，同意进入抄纸工序。</span></div>' +
             '</div>' +
