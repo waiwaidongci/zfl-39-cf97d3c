@@ -31,6 +31,21 @@ export function mainPage() {
       <div class="panel"><h2>每天记录温度、气味、纤维状态和换水情况，系统统计发酵进度与异常次数。</h2><div class="grid" id="cards"></div></div>
     </section>
   </main>
+
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="handoverDrawer" aria-hidden="true">
+    <div class="drawer-header">
+      <h2 id="drawerTitle">交接历史</h2>
+      <div class="drawer-actions">
+        <button class="secondary" id="drawerCreateHandover">🤝 新建交接</button>
+        <button class="drawer-close" id="drawerClose" aria-label="关闭">×</button>
+      </div>
+    </div>
+    <div class="drawer-body" id="drawerBody">
+      <div class="drawer-loading">加载中...</div>
+    </div>
+  </aside>
+
   <script>
     const fields = ${JSON.stringify(fields)};
     const stages = ${JSON.stringify(stages)};
@@ -48,6 +63,13 @@ export function mainPage() {
     const reportFilter = document.querySelector('#reportFilter');
     const searchInput = document.querySelector('#search');
     const resetBtn = document.querySelector('#resetFilters');
+    const drawer = document.getElementById('handoverDrawer');
+    const drawerOverlay = document.getElementById('drawerOverlay');
+    const drawerClose = document.getElementById('drawerClose');
+    const drawerBody = document.getElementById('drawerBody');
+    const drawerTitle = document.getElementById('drawerTitle');
+    const drawerCreateHandover = document.getElementById('drawerCreateHandover');
+    let currentDrawerBatchCode = null;
     let items = [];
     let vats = [];
     let filterState = {
@@ -141,6 +163,21 @@ export function mainPage() {
       document.querySelectorAll('[data-status]').forEach(sel => sel.onchange = async () => { await api('/api/items/'+sel.dataset.status, { method:'PATCH', body: JSON.stringify({ status: sel.value }) }); await load(); });
       document.querySelectorAll('[data-note]').forEach(btn => btn.onclick = async () => { const id = btn.dataset.note; const note = prompt('记录备注'); if (note) { await api('/api/items/'+id+'/logs', { method:'POST', body: JSON.stringify({ step:'备注', note }) }); await load(); } });
       document.querySelectorAll('[data-report]').forEach(btn => btn.onclick = () => { window.location.href = '/report/' + encodeURIComponent(btn.dataset.report); });
+      document.querySelectorAll('[data-handover-history]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openHandoverDrawer(btn.dataset.handoverHistory);
+        };
+      });
+      document.querySelectorAll('[data-quick-handover]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const code = btn.dataset.quickHandover;
+          window.location.href = '/handover?batchCode=' + encodeURIComponent(code) + '&autoSelect=1';
+        };
+      });
     }
     function formatDateTime(isoStr) {
       if (!isoStr) return '';
@@ -152,6 +189,27 @@ export function mainPage() {
       const mm = String(d.getMinutes()).padStart(2, '0');
       return m + '-' + day + ' ' + hh + ':' + mm;
     }
+    function formatDateOnly(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+    function getWaterChangeStatus(dateStr) {
+      if (!dateStr) return { cls: '', label: '' };
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const target = new Date(dateStr);
+      target.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) return { cls: 'water-overdue', label: '已逾期 ' + Math.abs(diffDays) + ' 天' };
+      if (diffDays === 0) return { cls: 'water-today', label: '今天需要换水' };
+      if (diffDays <= 2) return { cls: 'water-soon', label: '还有 ' + diffDays + ' 天' };
+      return { cls: 'water-ok', label: '还有 ' + diffDays + ' 天' };
+    }
     function cardHtml(item) {
       const itemCode = item.code || item.id;
       const main = fields.filter(([k]) => k !== 'vatId' && k !== 'startDate' && k !== 'expectedDays').slice(0,4).map(([key,label]) => '<div><b>'+label+'</b> '+(item[key] ?? '')+'</div>').join('');
@@ -159,20 +217,126 @@ export function mainPage() {
       const logs = (item.logs || []).slice(-4).map(l => '<div>'+l.step+'：'+l.note+'</div>').join('');
       const reportBtn = item.status === '可抄纸' ? '<button class="secondary" data-report="'+itemCode+'">📋 评估报告</button>' : '';
       const handover = item.latestHandover;
-      const handoverLink = '/handover?batchCode=' + encodeURIComponent(itemCode);
       const timelineLink = '/timeline?code=' + encodeURIComponent(itemCode);
+      const quickHandoverBtn = '<button class="quick-handover-btn" data-quick-handover="' + itemCode + '" title="为该批次快速创建交接记录">🤝 新建交接</button>';
       const handoverHtml = handover ?
-        '<a class="handover-summary" href="' + handoverLink + '" title="点击查看该批次全部交接记录">' +
-          '<div class="handover-title">🤝 最近交接 · ' + formatDateTime(handover.createdAt) + ' →</div>' +
+        '<div class="handover-summary" data-handover-history="' + itemCode + '" style="cursor:pointer">' +
+          '<div class="handover-title">🤝 最近交接 · ' + formatDateTime(handover.createdAt) + ' → 点击查看全部</div>' +
           '<div class="handover-line">' + handover.handedOverBy + ' → ' + handover.receivedBy + '</div>' +
           (handover.keyObservations ? '<div class="handover-line meta">观察：' + handover.keyObservations + '</div>' : '') +
           (handover.pendingAbnormalities ? '<div class="handover-line warn">异常：' + handover.pendingAbnormalities + '</div>' : '') +
           (handover.nextWaterChangeReminder ? '<div class="handover-line water">💧 换水提醒：' + handover.nextWaterChangeReminder + '</div>' : '') +
-        '</a>' :
-        '<a class="handover-summary empty-handover" href="/handover" title="去创建交接记录">' +
-          '<div class="handover-title">🤝 暂无交接记录 · 点击去创建</div>' +
-        '</a>';
-      return '<article class="card"><h3><a class="card-title-link" href="' + timelineLink + '" title="查看该批次时间轴">' + itemCode + '</a></h3><span class="pill">'+item.status+'</span>'+main+tasks+handoverHtml+'<label>状态</label><select data-status="'+itemCode+'">'+stages.map(s => '<option '+(s===item.status?'selected':'')+'>'+s+'</option>').join('')+'</select><button class="secondary" data-note="'+itemCode+'">追加备注</button>'+reportBtn+'<div class="logs meta">'+(logs || '暂无记录')+'</div></article>';
+        '</div>' :
+        '<div class="handover-summary empty-handover" data-handover-history="' + itemCode + '" style="cursor:pointer">' +
+          '<div class="handover-title">🤝 暂无交接记录 · 点击查看 / 创建</div>' +
+        '</div>';
+      return '<article class="card"><h3><a class="card-title-link" href="' + timelineLink + '" title="查看该批次时间轴">' + itemCode + '</a></h3><span class="pill">'+item.status+'</span>'+main+tasks+handoverHtml+'<div class="card-actions">'+quickHandoverBtn+'<button class="secondary" data-note="'+itemCode+'">追加备注</button>'+reportBtn+'</div><label>状态</label><select data-status="'+itemCode+'">'+stages.map(s => '<option '+(s===item.status?'selected':'')+'>'+s+'</option>').join('')+'</select><div class="logs meta">'+(logs || '暂无记录')+'</div></article>';
+    }
+    function openHandoverDrawer(batchCode) {
+      currentDrawerBatchCode = batchCode;
+      drawerTitle.textContent = '交接历史 · ' + batchCode;
+      drawerBody.innerHTML = '<div class="drawer-loading">加载中...</div>';
+      drawer.classList.add('open');
+      drawerOverlay.classList.add('show');
+      drawer.setAttribute('aria-hidden', 'false');
+      drawerCreateHandover.onclick = () => {
+        window.location.href = '/handover?batchCode=' + encodeURIComponent(batchCode) + '&autoSelect=1';
+      };
+      loadDrawerContent(batchCode);
+    }
+    function closeHandoverDrawer() {
+      drawer.classList.remove('open');
+      drawerOverlay.classList.remove('show');
+      drawer.setAttribute('aria-hidden', 'true');
+      currentDrawerBatchCode = null;
+    }
+    async function loadDrawerContent(batchCode) {
+      try {
+        const details = await api('/api/items/' + encodeURIComponent(batchCode) + '/handover-details');
+        renderDrawerContent(details);
+      } catch (err) {
+        drawerBody.innerHTML = '<div class="drawer-error">加载失败：' + err.message + '</div>';
+      }
+    }
+    function renderDrawerContent(details) {
+      const { batch, handovers, pendingAbnormalitiesList, latestWaterChangeReminder, latestAbnormalObservations, handoverCount, lastHandoverAt } = details;
+      const waterStatus = getWaterChangeStatus(latestWaterChangeReminder);
+      const batchInfoHtml = '<div class="drawer-section">' +
+        '<div class="drawer-section-title">📦 批次信息</div>' +
+        '<div class="batch-info-grid">' +
+          '<div><b>编号：</b>' + batch.code + '</div>' +
+          '<div><b>原料：</b>' + (batch.source || '-') + '</div>' +
+          '<div><b>缸：</b>' + (batch.vat || '-') + '</div>' +
+          '<div><b>负责人：</b>' + (batch.owner || '-') + '</div>' +
+          '<div><b>状态：</b><span class="pill">' + batch.status + '</span></div>' +
+          '<div><b>发酵天数：</b>' + (batch.days || 0) + ' / ' + (batch.expectedDays || 0) + ' 天</div>' +
+        '</div>' +
+      '</div>';
+      const waterHtml = '<div class="drawer-section">' +
+        '<div class="drawer-section-title">💧 下次换水提醒</div>' +
+        (latestWaterChangeReminder ?
+          '<div class="water-reminder ' + waterStatus.cls + '">' +
+            '<div class="water-date">📅 ' + latestWaterChangeReminder + '</div>' +
+            '<div class="water-status">' + waterStatus.label + '</div>' +
+          '</div>' :
+          '<div class="empty-inline">暂无换水提醒</div>'
+        ) +
+      '</div>';
+      const pendingHtml = '<div class="drawer-section">' +
+        '<div class="drawer-section-title">⚠️ 待处理异常 ' + (pendingAbnormalitiesList.length > 0 ? '<span class="badge badge-warn">' + pendingAbnormalitiesList.length + '</span>' : '') + '</div>' +
+        (pendingAbnormalitiesList.length > 0 ?
+          '<div class="pending-list">' +
+            pendingAbnormalitiesList.map(p =>
+              '<div class="pending-item">' +
+                '<div class="pending-head"><span class="pending-who">' + p.handedOverBy + ' → ' + p.receivedBy + '</span><span class="pending-when">' + formatDateTime(p.createdAt) + '</span></div>' +
+                '<div class="pending-content">' + p.content + '</div>' +
+              '</div>'
+            ).join('') +
+          '</div>' :
+          '<div class="empty-inline">暂无待处理异常</div>'
+        ) +
+      '</div>';
+      const obsHtml = latestAbnormalObservations && latestAbnormalObservations.length > 0 ?
+        ('<div class="drawer-section">' +
+          '<div class="drawer-section-title">🔴 最近异常观察记录</div>' +
+          '<div class="obs-list">' +
+            latestAbnormalObservations.map(o =>
+              '<div class="obs-item warn">' +
+                '<div class="obs-head">' + formatDateTime(o.at) + '</div>' +
+                '<div class="obs-body">' +
+                  (o.temperature ? '温度:' + o.temperature + '℃ ' : '') +
+                  (o.smell ? '气味:' + o.smell + ' ' : '') +
+                  (o.fiber ? '纤维:' + o.fiber + ' ' : '') +
+                  (o.abnormalNote ? '<br><b>异常备注:</b> ' + o.abnormalNote : '') +
+                '</div>' +
+              '</div>'
+            ).join('') +
+          '</div>' +
+        '</div>') : '';
+      const handoversHtml = '<div class="drawer-section">' +
+        '<div class="drawer-section-title">📋 全部交接记录 <span class="badge">' + handoverCount + ' 条</span>' +
+          (lastHandoverAt ? '<span class="drawer-section-sub"> 最近：' + formatDateTime(lastHandoverAt) + '</span>' : '') +
+        '</div>' +
+        (handovers.length > 0 ?
+          '<div class="handover-history-list">' +
+            handovers.map((h, idx) =>
+              '<div class="handover-history-item">' +
+                '<div class="hhi-head">' +
+                  '<span class="hhi-index">#' + (handovers.length - idx) + '</span>' +
+                  '<span class="hhi-time">' + formatDateTime(h.createdAt) + '</span>' +
+                  '<span class="hhi-arrow">' + h.handedOverBy + ' → ' + h.receivedBy + '</span>' +
+                '</div>' +
+                (h.keyObservations ? '<div class="hhi-row"><b>观察：</b><span>' + h.keyObservations + '</span></div>' : '') +
+                (h.pendingAbnormalities ? '<div class="hhi-row warn"><b>异常：</b><span>' + h.pendingAbnormalities + '</span></div>' : '') +
+                (h.nextWaterChangeReminder ? '<div class="hhi-row water"><b>换水提醒：</b><span>' + h.nextWaterChangeReminder + '</span></div>' : '') +
+                (h.note ? '<div class="hhi-row"><b>备注：</b><span>' + h.note + '</span></div>' : '') +
+              '</div>'
+            ).join('') +
+          '</div>' :
+          '<div class="empty-inline">暂无交接记录，点击右上角"新建交接"按钮创建</div>'
+        ) +
+      '</div>';
+      drawerBody.innerHTML = batchInfoHtml + waterHtml + pendingHtml + obsHtml + handoversHtml;
     }
     async function load() {
       items = await api('/api/items');
@@ -204,6 +368,13 @@ export function mainPage() {
     searchInput.oninput = () => { filterState.search = searchInput.value; saveFilters(); render(); };
     resetBtn.onclick = resetFilters;
     document.querySelector('#reload').onclick = load;
+    drawerClose.onclick = closeHandoverDrawer;
+    drawerOverlay.onclick = closeHandoverDrawer;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) {
+        closeHandoverDrawer();
+      }
+    });
     load();
   </script>
 </body>

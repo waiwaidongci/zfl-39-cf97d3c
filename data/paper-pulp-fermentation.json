@@ -1,22 +1,75 @@
 {
-  "vats": [],
+  "rules": [
+    {
+      "id": "default",
+      "name": "默认规则",
+      "source": "默认",
+      "isDefault": true,
+      "minDays": 7,
+      "maxDays": 21,
+      "minTemp": 15,
+      "maxTemp": 35,
+      "abnormalKeywords": [
+        "霉",
+        "臭",
+        "结块"
+      ],
+      "onAbnormalKeyword": "异常观察",
+      "onTemperatureOutOfRange": "异常观察",
+      "onDaysReachedMin": "可抄纸",
+      "onDaysExceedMax": "异常观察"
+    }
+  ],
+  "items": [
+    {
+      "id": "PF-002",
+      "code": "PF-002",
+      "source": "桑皮",
+      "days": 4,
+      "status": "发酵中",
+      "observations": [
+        {
+          "at": "2026-06-22T05:31:15.871Z",
+          "temperature": "25.5",
+          "smell": "微酸",
+          "fiber": "松散",
+          "changedWater": "是",
+          "abnormalNote": "",
+          "abnormal": false
+        }
+      ],
+      "logs": [
+        {
+          "at": "2026-06-22T05:31:15.871Z",
+          "step": "观察",
+          "note": "温度25.5，微酸，松散",
+          "abnormal": false
+        },
+        {
+          "at": "2026-06-22T06:09:57.053Z",
+          "step": "交接",
+          "note": "交接给王师傅（交出人：林素）"
+        }
+      ]
+    }
+  ],
   "events": [
     {
-      "id": "EVT-1782095960691-ndmxme",
+      "id": "EVT-1782106275873-86co98",
       "type": "observation.recorded",
-      "batchId": "SIM-1",
-      "batchCode": "SIM-1",
-      "timestamp": "2026-06-22T02:30:00.000Z",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-22T05:31:15.871Z",
       "data": {
-        "temperature": "25",
-        "smell": "正常酸味",
+        "temperature": "25.5",
+        "smell": "微酸",
         "fiber": "松散",
-        "changedWater": "未换水",
+        "changedWater": "是",
         "abnormalNote": "",
         "newStatus": "发酵中",
-        "newDays": 2,
+        "newDays": 4,
         "step": "观察",
-        "note": "温度25，正常酸味，松散"
+        "note": "温度25.5，微酸，松散"
       },
       "metadata": {
         "source": "batch_import",
@@ -29,11 +82,44 @@
       "_migratedFrom": null
     },
     {
-      "id": "EVT-1782098478680-b8pyou",
+      "id": "EVT-1782106275873-tbzomi",
+      "type": "rule.evaluated",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-22T05:31:15.871Z",
+      "data": {
+        "ruleId": "default",
+        "ruleName": "默认规则",
+        "nextStatus": "发酵中",
+        "newDays": 4,
+        "reasons": [],
+        "keywordMatched": [],
+        "triggered": {
+          "abnormalCheckbox": false,
+          "abnormalKeyword": false,
+          "temperatureOutOfRange": false,
+          "daysExceedMax": false,
+          "daysReachedMin": false,
+          "effectiveRule": "none"
+        },
+        "note": "规则判定：默认规则 → 发酵中（无触发项）"
+      },
+      "metadata": {
+        "source": "batch_import",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": false,
+      "_migratedFrom": null
+    },
+    {
+      "id": "EVT-1782107244229-j3u4cv",
       "type": "batch.created",
-      "batchId": "SIM-1",
-      "batchCode": "SIM-1",
-      "timestamp": "2026-06-22T02:30:00.000Z",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-22T05:31:15.871Z",
       "data": {
         "source": "桑皮",
         "vat": "",
@@ -56,16 +142,16 @@
       "_migratedFrom": "item.initial_state"
     },
     {
-      "id": "EVT-1782098478680-fltbam",
+      "id": "EVT-1782107244229-xvcqec",
       "type": "observation.recorded",
-      "batchId": "SIM-1",
-      "batchCode": "SIM-1",
-      "timestamp": "2026-06-22T02:30:00.000Z",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-22T05:31:15.871Z",
       "data": {
-        "temperature": "25",
-        "smell": "正常酸味",
+        "temperature": "25.5",
+        "smell": "微酸",
         "fiber": "松散",
-        "changedWater": "未换水",
+        "changedWater": "是",
         "abnormalNote": "",
         "originalIndex": 0
       },
@@ -73,23 +159,23 @@
         "source": "migration",
         "operator": null,
         "abnormal": false,
-        "note": "温度25，正常酸味，松散，换水:未换水"
+        "note": "温度25.5，微酸，松散，换水:是"
       },
       "version": 1,
       "_migrated": true,
       "_migratedFrom": "observations[0]"
     },
     {
-      "id": "EVT-1782098478680-ep6ps6",
+      "id": "EVT-1782107244229-8m8s7k",
       "type": "rule.evaluated",
-      "batchId": "SIM-1",
-      "batchCode": "SIM-1",
-      "timestamp": "2026-06-22T02:30:00.000Z",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-22T05:31:15.871Z",
       "data": {
         "ruleId": "migrated",
         "ruleName": "迁移推断规则",
         "nextStatus": "发酵中",
-        "newDays": 2,
+        "newDays": 4,
         "reasons": [
           "迁移时从观察记录推断"
         ],
@@ -113,14 +199,14 @@
       "_migratedFrom": "observations[0].rule_evaluation"
     },
     {
-      "id": "EVT-1782098478680-96mm9u",
+      "id": "EVT-1782107244229-ctep70",
       "type": "note.added",
-      "batchId": "SIM-1",
-      "batchCode": "SIM-1",
-      "timestamp": "2026-06-22T02:30:00.000Z",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-22T05:31:15.871Z",
       "data": {
         "step": "观察",
-        "note": "温度25，正常酸味，松散",
+        "note": "温度25.5，微酸，松散",
         "originalIndex": 0
       },
       "metadata": {
@@ -134,11 +220,11 @@
       "_migratedFrom": "logs[0]"
     },
     {
-      "id": "EVT-1782095960691-0atcg2",
+      "id": "EVT-1782106275873-2id2ok",
       "type": "batch.imported",
       "batchId": null,
       "batchCode": null,
-      "timestamp": "2026-06-22T02:39:20.691Z",
+      "timestamp": "2026-06-22T05:31:15.873Z",
       "data": {
         "importedCount": 1,
         "successCount": 1,
@@ -157,15 +243,15 @@
       "_migratedFrom": null
     },
     {
-      "id": "EVT-1782098478680-4ecp36",
+      "id": "EVT-1782107244229-smlb90",
       "type": "status.changed",
-      "batchId": "SIM-1",
-      "batchCode": "SIM-1",
-      "timestamp": "2026-06-22T03:21:18.680Z",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-22T05:47:24.229Z",
       "data": {
         "oldStatus": "入缸",
         "newStatus": "发酵中",
-        "newDays": 2,
+        "newDays": 4,
         "step": "状态",
         "note": "迁移时状态同步：发酵中"
       },
@@ -180,58 +266,30 @@
       "_migratedFrom": "item.status_reconciliation"
     },
     {
-      "id": "EVT-1782102024266-47jo6h",
-      "type": "batch.created",
-      "batchId": "PF-1782102024266",
+      "id": "EVT-1782108597053-smivw7",
+      "type": "handover.created",
+      "batchId": "PF-002",
       "batchCode": "PF-002",
-      "timestamp": "2026-06-22T04:20:24.266Z",
+      "timestamp": "2026-06-22T06:09:57.053Z",
       "data": {
-        "source": "桑皮",
-        "vat": "",
-        "vatId": "",
-        "owner": "王师傅",
-        "status": "入缸",
-        "expectedDays": 7,
-        "startDate": "",
-        "step": "建档",
-        "note": "创建纸浆批次"
+        "handoverId": "HO-08597053",
+        "handedOverBy": "林素",
+        "receivedBy": "王师傅",
+        "keyObservations": "温度稳定在24-26℃，气味正常微酸",
+        "pendingAbnormalities": "缸壁有轻微霉斑，需要关注",
+        "nextWaterChangeReminder": "2026-06-24",
+        "step": "交接",
+        "note": "交接给王师傅（交出人：林素） · 正常交接"
       },
       "metadata": {
-        "source": "api",
-        "operator": null,
+        "source": "handover",
+        "operator": "林素",
         "abnormal": false,
         "note": ""
       },
       "version": 1,
       "_migrated": false,
       "_migratedFrom": null
-    },
-    {
-      "id": "EVT-1782102024272-yyjj63",
-      "type": "batch.created",
-      "batchId": "PF-1782102024266",
-      "batchCode": "PF-002",
-      "timestamp": "2026-06-22T04:20:24.266Z",
-      "data": {
-        "source": "桑皮",
-        "vat": "",
-        "vatId": "",
-        "owner": "王师傅",
-        "expectedDays": 7,
-        "startDate": "",
-        "status": "入缸",
-        "step": "建档",
-        "note": "创建纸浆批次，入"
-      },
-      "metadata": {
-        "source": "migration",
-        "operator": null,
-        "abnormal": false,
-        "note": ""
-      },
-      "version": 1,
-      "_migrated": true,
-      "_migratedFrom": "item.initial_state"
     }
   ],
   "fermentationRules": [
@@ -261,54 +319,39 @@
         "onTemperatureOutOfRange": "异常观察",
         "onDaysReachedMin": "可抄纸",
         "onDaysExceedMax": "异常观察"
-      }
-    }
-  ],
-  "items": [
-    {
-      "id": "PF-1782102024266",
-      "code": "PF-002",
-      "source": "桑皮",
-      "vat": "",
-      "days": "",
-      "expectedDays": "",
-      "startDate": "",
-      "owner": "王师傅",
-      "status": "入缸",
-      "logs": [
-        {
-          "at": "2026-06-22T04:20:24.266Z",
-          "step": "建档",
-          "note": "创建纸浆批次"
-        }
-      ]
+      },
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z"
     },
     {
-      "id": "SIM-1",
-      "code": "SIM-1",
-      "source": "桑皮",
-      "days": 2,
-      "status": "发酵中",
-      "expectedDays": 7,
-      "logs": [
-        {
-          "at": "2026-06-22T02:30:00.000Z",
-          "step": "观察",
-          "note": "温度25，正常酸味，松散",
-          "abnormal": false
-        }
+      "id": "rule-goushupi",
+      "name": "构树皮发酵规则",
+      "source": "构树皮",
+      "isDefault": false,
+      "minDays": 7,
+      "maxDays": 21,
+      "temperatureMin": 18,
+      "temperatureMax": 32,
+      "abnormalKeywords": [
+        "霉",
+        "臭",
+        "腐",
+        "酸败",
+        "异味",
+        "发黑",
+        "结块",
+        "霉斑",
+        "发霉",
+        "腐败"
       ],
-      "observations": [
-        {
-          "at": "2026-06-22T02:30:00.000Z",
-          "temperature": "25",
-          "smell": "正常酸味",
-          "fiber": "松散",
-          "changedWater": "未换水",
-          "abnormalNote": "",
-          "abnormal": false
-        }
-      ]
+      "autoStatusRules": {
+        "onAbnormalKeyword": "异常观察",
+        "onTemperatureOutOfRange": "异常观察",
+        "onDaysReachedMin": "可抄纸",
+        "onDaysExceedMax": "异常观察"
+      },
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z"
     }
   ],
   "experiments": [
@@ -321,30 +364,22 @@
       "updatedAt": "2026-06-10T00:00:00.000Z"
     }
   ],
-  "handovers": [],
-  "syncMetadata": {
-    "workshopId": "WS-mqonfm0w-4oc5qc",
-    "workshopName": "本地工坊",
-    "lastExportAt": "2026-06-22T03:21:38.624Z",
-    "lastImportAt": null
-  },
-  "syncHistory": [
+  "handovers": [
     {
-      "id": "SYNC-1782098498624-y2gzbt",
-      "type": "export",
-      "remoteWorkshopId": null,
-      "remoteWorkshopName": null,
-      "timestamp": "2026-06-22T03:21:38.624Z",
-      "result": {
-        "itemCount": 1,
-        "eventCount": 7,
-        "vatCount": 0,
-        "ruleCount": 1,
-        "workshopId": "WS-mqonfm0w-4oc5qc",
-        "workshopName": "本地工坊"
-      },
-      "conflictCount": 0,
-      "resolvedCount": 0
+      "id": "HO-08597053",
+      "handedOverBy": "林素",
+      "receivedBy": "王师傅",
+      "batchIds": [
+        "PF-002"
+      ],
+      "batchCodes": [
+        "PF-002"
+      ],
+      "keyObservations": "温度稳定在24-26℃，气味正常微酸",
+      "pendingAbnormalities": "缸壁有轻微霉斑，需要关注",
+      "nextWaterChangeReminder": "2026-06-24",
+      "note": "正常交接",
+      "createdAt": "2026-06-22T06:09:57.053Z"
     }
   ]
 }

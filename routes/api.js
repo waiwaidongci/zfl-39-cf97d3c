@@ -8,7 +8,7 @@ import {
   deleteExperiment, addBatchesToExperiment, removeBatchFromExperiment,
   getExperimentWithAnalysis, buildReadinessReport, listReadyBatches,
   listHandovers, getHandoverById, createHandover, getHandoversByBatch,
-  getLatestHandoverByBatch, getHandoverSummary,
+  getLatestHandoverByBatch, getHandoverSummary, getBatchHandoverDetails,
   EVENT_TYPES, EVENT_TYPE_LABELS, createEvent, appendEvent, appendEvents,
   listEvents, getEventById, getEventsByBatch, rebuildBatchState,
   getEventStats, runEventMigration, verifyMigration,
@@ -509,6 +509,13 @@ export async function handleApi(req, res, url, method) {
   if (batchHandoverMatch && method === "GET") {
     const handovers = getHandoversByBatch(db, batchHandoverMatch[1]);
     return send(res, 200, { handovers });
+  }
+
+  const batchHandoverDetailsMatch = url.pathname.match(/^\/api\/items\/([^/]+)\/handover-details$/);
+  if (batchHandoverDetailsMatch && method === "GET") {
+    const details = getBatchHandoverDetails(db, batchHandoverDetailsMatch[1]);
+    if (!details) return send(res, 404, { error: "batch_not_found", message: "找不到该批次" });
+    return send(res, 200, details);
   }
 
   const batchLastHandoverMatch = url.pathname.match(/^\/api\/items\/([^/]+)\/last-handover$/);

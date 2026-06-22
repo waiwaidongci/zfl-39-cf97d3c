@@ -18,15 +18,16 @@ export function handoverPage() {
   <main>
     <section class="form-section">
       <h2>新增交接记录</h2>
+      <div id="prefillNotice" class="prefill-notice" style="display:none"></div>
       <form id="handoverForm">
         <div class="form-row">
           <div class="form-col">
             <label>交出人</label>
-            <input name="handedOverBy" required>
+            <input name="handedOverBy" id="handedOverBy" required>
           </div>
           <div class="form-col">
             <label>接收人</label>
-            <input name="receivedBy" required>
+            <input name="receivedBy" id="receivedBy" required>
           </div>
         </div>
         <div class="form-row">
@@ -38,25 +39,25 @@ export function handoverPage() {
         <div class="form-row">
           <div class="form-col">
             <label>重点观察事项</label>
-            <textarea name="keyObservations" placeholder="温度、气味、纤维状态等需要注意的事项"></textarea>
+            <textarea name="keyObservations" id="keyObservations" placeholder="温度、气味、纤维状态等需要注意的事项"></textarea>
           </div>
         </div>
         <div class="form-row">
           <div class="form-col">
             <label>未处理异常</label>
-            <textarea name="pendingAbnormalities" placeholder="尚未处理的异常情况"></textarea>
+            <textarea name="pendingAbnormalities" id="pendingAbnormalities" placeholder="尚未处理的异常情况"></textarea>
           </div>
         </div>
         <div class="form-row">
           <div class="form-col">
             <label>下一次换水提醒</label>
-            <input name="nextWaterChangeReminder" type="date">
+            <input name="nextWaterChangeReminder" id="nextWaterChangeReminder" type="date">
           </div>
         </div>
         <div class="form-row">
           <div class="form-col">
             <label>备注</label>
-            <textarea name="note" placeholder="其他需要说明的事项"></textarea>
+            <textarea name="note" id="note" placeholder="其他需要说明的事项"></textarea>
           </div>
         </div>
         <button type="submit">提交交接记录</button>
@@ -81,6 +82,7 @@ export function handoverPage() {
     let handovers = [];
     let batches = [];
     let owners = [];
+    let prefilledBatchIds = [];
 
     async function api(path, options) {
       const res = await fetch(path, options && options.body ? { ...options, headers:{ 'Content-Type':'application/json' } } : options);
@@ -110,13 +112,18 @@ export function handoverPage() {
         box.innerHTML = '<div class="meta">暂无进行中的批次</div>';
         return;
       }
-      box.innerHTML = activeBatches.map(b =>
-        '<label class="batch-item">' +
-          '<input type="checkbox" name="batchIds" value="' + b.id + '">' +
+      box.innerHTML = activeBatches.map(b => {
+        const batchKey = b.id || b.code;
+        const isPrefilled = prefilledBatchIds.includes(batchKey) || prefilledBatchIds.includes(b.code);
+        const checkedAttr = isPrefilled ? ' checked' : '';
+        const highlightClass = isPrefilled ? ' batch-item-prefilled' : '';
+        return '<label class="batch-item' + highlightClass + '">' +
+          '<input type="checkbox" name="batchIds" value="' + batchKey + '"' + checkedAttr + '>' +
           '<span class="batch-code">' + b.code + '</span>' +
           '<span class="batch-meta">' + (b.source || '') + ' · ' + (b.vat || '') + ' · ' + b.status + '</span>' +
-        '</label>'
-      ).join('');
+          (isPrefilled ? '<span class="prefill-tag">已预填</span>' : '') +
+        '</label>';
+      }).join('');
     }
 
     function renderFilterOptions() {
@@ -165,7 +172,7 @@ export function handoverPage() {
           const vat = info ? (info.vat || '') : '';
           const owner = info ? (info.owner || '') : '';
           const source = info ? (info.source || '') : '';
-          return '<a class="batch-tag ' + statusCls + '" href="/timeline?code=' + encodeURIComponent(c) + '" title="原料:' + source + ' · 缸:' + vat + ' · 负责人:' + owner + ' · 状态:' + status + '">' +
+          return '<a class="batch-tag ' + statusCls + '" href="/?code=' + encodeURIComponent(c) + '#openDrawer=' + encodeURIComponent(c) + '" title="原料:' + source + ' · 缸:' + vat + ' · 负责人:' + owner + ' · 状态:' + status + '">' +
             '<span class="bt-code">' + c + '</span>' +
             (status ? '<span class="bt-status">' + status + '</span>' : '') +
           '</a>';
@@ -177,7 +184,7 @@ export function handoverPage() {
             const info = getBatchInfo(c);
             if (!info) return '';
             return '<div class="bd-item">' +
-              '<a class="bd-code" href="/timeline?code=' + encodeURIComponent(c) + '">' + c + '</a>' +
+              '<a class="bd-code" href="/?code=' + encodeURIComponent(c) + '#openDrawer=' + encodeURIComponent(c) + '">' + c + '</a>' +
               '<span class="bd-source">' + (info.source || '-') + '</span>' +
               '<span class="bd-vat">' + (info.vat || '-') + '</span>' +
               '<span class="bd-owner">' + (info.owner || '-') + '</span>' +
@@ -201,6 +208,90 @@ export function handoverPage() {
       }).join('');
     }
 
+    function applyUrlPrefill() {
+      const params = new URLSearchParams(window.location.search);
+      const batchCodeParam = params.get('batchCode') || params.get('batchId') || '';
+      const batchCodesParam = params.get('batchCodes') || '';
+      const autoSelect = params.get('autoSelect') === '1' || !!batchCodeParam || !!batchCodesParam;
+      const notice = document.getElementById('prefillNotice');
+      prefilledBatchIds = [];
+
+      let codes = [];
+      if (batchCodesParam) {
+        codes = batchCodesParam.split(',').map(c => c.trim()).filter(Boolean);
+      } else if (batchCodeParam) {
+        codes = [batchCodeParam];
+      }
+
+      if (autoSelect && codes.length > 0) {
+        prefilledBatchIds = codes;
+        const matchedBatches = codes.map(c => batches.find(b =>
+          (b.id && b.id === c) || (b.code && b.code === c)
+        )).filter(Boolean);
+
+        if (matchedBatches.length > 0) {
+          const codesStr = matchedBatches.map(b => b.code).join('、');
+          notice.style.display = 'block';
+          notice.innerHTML = '📌 已从主页预填批次：<strong>' + codesStr + '</strong>，请确认并填写其他信息后提交。' +
+            ' <a href="/handover" class="prefill-clear">清除预填</a>';
+          if (matchedBatches.length === 1) {
+            const batch = matchedBatches[0];
+            if (batch.owner) {
+              const handedOverInput = document.getElementById('handedOverBy');
+              if (handedOverInput && !handedOverInput.value) {
+                handedOverInput.value = batch.owner;
+              }
+            }
+            try {
+              api('/api/items/' + encodeURIComponent(batch.id || batch.code) + '/handover-details').then(details => {
+                if (details && details.pendingAbnormalitiesList && details.pendingAbnormalitiesList.length > 0) {
+                  const latestPending = details.pendingAbnormalitiesList[0];
+                  const abnormalInput = document.getElementById('pendingAbnormalities');
+                  if (abnormalInput && !abnormalInput.value) {
+                    abnormalInput.value = latestPending.content;
+                  }
+                }
+                if (details && details.latestWaterChangeReminder) {
+                  const waterInput = document.getElementById('nextWaterChangeReminder');
+                  if (waterInput && !waterInput.value) {
+                    waterInput.value = details.latestWaterChangeReminder;
+                  }
+                }
+                if (details && details.handovers && details.handovers.length > 0) {
+                  const latest = details.handovers[0];
+                  if (latest.keyObservations) {
+                    const obsInput = document.getElementById('keyObservations');
+                    if (obsInput && !obsInput.value) {
+                      obsInput.value = latest.keyObservations;
+                    }
+                  }
+                }
+              }).catch(() => {});
+            } catch (e) {}
+          }
+        }
+      }
+    }
+
+    function applyUrlFilters() {
+      const params = new URLSearchParams(window.location.search);
+      const batchCode = params.get('batchCode') || params.get('batchId') || '';
+      const person = params.get('person') || '';
+      if (batchCode) {
+        const batchSel = document.getElementById('filterBatch');
+        if (Array.from(batchSel.options).some(o => o.value === batchCode)) {
+          batchSel.value = batchCode;
+        }
+      }
+      if (person) {
+        const personSel = document.getElementById('filterPerson');
+        if (Array.from(personSel.options).some(o => o.value === person)) {
+          personSel.value = person;
+        }
+      }
+      renderList();
+    }
+
     async function loadData() {
       const data = await api('/api/handovers');
       handovers = data.handovers || [];
@@ -208,7 +299,8 @@ export function handoverPage() {
       owners = data.owners || [];
       renderBatchSelect();
       renderFilterOptions();
-      renderList();
+      applyUrlPrefill();
+      applyUrlFilters();
     }
 
     document.getElementById('handoverForm').onsubmit = async (e) => {
@@ -237,26 +329,7 @@ export function handoverPage() {
     document.getElementById('filterPerson').onchange = renderList;
     document.getElementById('filterBatch').onchange = renderList;
 
-    function applyUrlFilters() {
-      const params = new URLSearchParams(window.location.search);
-      const batchCode = params.get('batchCode') || params.get('batchId') || '';
-      const person = params.get('person') || '';
-      if (batchCode) {
-        const batchSel = document.getElementById('filterBatch');
-        if (Array.from(batchSel.options).some(o => o.value === batchCode)) {
-          batchSel.value = batchCode;
-        }
-      }
-      if (person) {
-        const personSel = document.getElementById('filterPerson');
-        if (Array.from(personSel.options).some(o => o.value === person)) {
-          personSel.value = person;
-        }
-      }
-      renderList();
-    }
-
-    loadData().then(applyUrlFilters);
+    loadData();
   </script>
 </body>
 </html>`;
