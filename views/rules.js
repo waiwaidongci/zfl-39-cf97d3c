@@ -56,28 +56,68 @@ export function rulesPage() {
       </form>
 
       <div class="panel mt-14">
-        <h2>规则匹配测试</h2>
-        <label>选择原料来源</label>
-        <select id="testSource"></select>
-        <div class="grid-2 mt-8">
-          <div>
-            <label>当前发酵天数</label>
-            <input type="number" id="testDays" value="5">
-          </div>
-          <div>
-            <label>温度(℃)</label>
-            <input type="number" id="testTemp" value="25">
+        <div class="panel-header">
+          <h2>🧪 规则试算</h2>
+          <div class="trial-hint">选择一个现有批次，输入模拟观察记录，即时预览判定结果（不写入真实数据）</div>
+        </div>
+
+        <div class="trial-mode-switch">
+          <label class="mode-option">
+            <input type="radio" name="trialMode" value="saved" checked>
+            <span>使用已保存规则</span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="trialMode" value="editing">
+            <span>使用正在编辑的规则</span>
+          </label>
+        </div>
+
+        <div id="editingRuleHint" class="editing-rule-hint" style="display:none">
+          <span class="hint-icon">💡</span>
+          <span>当前使用表单中未保存的规则参数进行试算，请先在上方表单中编辑规则</span>
+        </div>
+
+        <label>选择批次</label>
+        <select id="testBatch">
+          <option value="">请选择一个批次进行试算</option>
+        </select>
+
+        <div id="batchInfo" class="batch-info" style="display:none">
+          <div class="info-grid">
+            <div><b>批次编号：</b><span id="infoCode"></span></div>
+            <div><b>原料来源：</b><span id="infoSource"></span></div>
+            <div><b>当前状态：</b><span id="infoStatus" class="pill"></span></div>
+            <div><b>已发酵天数：</b><span id="infoDays"></span> 天</div>
+            <div><b>入缸日期：</b><span id="infoDate"></span></div>
+            <div><b>浸泡缸：</b><span id="infoVat"></span></div>
           </div>
         </div>
-        <label class="mt-8">气味/气味描述</label>
+
+        <div class="grid-2 mt-8">
+          <div>
+            <label>温度(℃)</label>
+            <input type="number" id="testTemp" value="" placeholder="例如：25">
+          </div>
+          <div>
+            <label>是否异常</label>
+            <select id="testAbnormal">
+              <option value="">否</option>
+              <option value="是">是</option>
+            </select>
+          </div>
+        </div>
+        <label class="mt-8">气味描述</label>
         <input id="testSmell" placeholder="例如：正常酸味、霉味、浓烈酸味">
         <label>纤维状态描述</label>
         <input id="testFiber" placeholder="例如：松散、结块、一般">
         <label>异常备注</label>
         <input id="testAbnormalNote" placeholder="例如：发现霉斑、有腐败味">
+
         <div class="form-actions">
-          <button type="button" class="primary" id="testBtn">测试匹配结果</button>
+          <button type="button" class="primary" id="testBtn">开始试算</button>
+          <button type="button" class="secondary" id="resetTrialBtn">重置</button>
         </div>
+
         <div id="testResult" class="test-result" style="display:none"></div>
       </div>
     </section>
@@ -99,12 +139,214 @@ export function rulesPage() {
 
     let rules = [];
     let sources = [];
+    let items = [];
+    let debounceTimer = null;
 
     async function api(path, options) {
       const res = await fetch(path, options && options.body ? { ...options, headers:{ 'Content-Type':'application/json' } } : options);
       const data = await res.json();
       if (!res.ok) throw new Error(data.errors ? data.errors.join('；') : (data.error || '请求失败'));
       return data;
+    }
+
+    function getEditingRule() {
+      const ruleData = collectFormData();
+      return ruleData;
+    }
+
+    function getTrialMode() {
+      const selected = document.querySelector('input[name="trialMode"]:checked');
+      return selected ? selected.value : 'saved';
+    }
+
+    function renderBatchOptions() {
+      const sel = document.getElementById('testBatch');
+      const activeItems = items.filter(i => 
+        i.status === '发酵中' || i.status === '入缸' || i.status === '异常观察'
+      );
+      sel.innerHTML = '<option value="">请选择一个批次进行试算</option>' +
+        activeItems.map(item => {
+          const label = `${item.code || item.id} · ${item.source || '未知原料'} · ${item.status} · ${item.days || 0}天`;
+          return `<option value="${item.id || item.code}">${label}</option>`;
+        }).join('');
+    }
+
+    function onBatchChange() {
+      const batchId = document.getElementById('testBatch').value;
+      const infoEl = document.getElementById('batchInfo');
+      if (!batchId) {
+        infoEl.style.display = 'none';
+        return;
+      }
+      const item = items.find(i => (i.id || i.code) === batchId);
+      if (!item) {
+        infoEl.style.display = 'none';
+        return;
+      }
+      document.getElementById('infoCode').textContent = item.code || item.id;
+      document.getElementById('infoSource').textContent = item.source || '-';
+      const statusEl = document.getElementById('infoStatus');
+      statusEl.textContent = item.status;
+      statusEl.className = 'pill ' + (item.status === '可抄纸' ? 'ok' : item.status === '异常观察' ? 'warn' : '');
+      document.getElementById('infoDays').textContent = item.days || 0;
+      document.getElementById('infoDate').textContent = item.startDate || '-';
+      document.getElementById('infoVat').textContent = item.vat || '-';
+      infoEl.style.display = 'block';
+      autoTryEvaluate();
+    }
+
+    function collectObservation() {
+      return {
+        temperature: document.getElementById('testTemp').value,
+        smell: document.getElementById('testSmell').value,
+        fiber: document.getElementById('testFiber').value,
+        abnormalNote: document.getElementById('testAbnormalNote').value,
+        abnormal: document.getElementById('testAbnormal').value,
+      };
+    }
+
+    function renderTrialResult(result) {
+      const el = document.getElementById('testResult');
+      el.style.display = 'block';
+
+      const statusClass = result.isAbnormal ? 'abnormal' : result.willBeReady ? 'ready' : 'normal';
+      el.className = 'test-result ' + statusClass;
+
+      const triggeredList = [];
+      if (result.triggered?.abnormalCheckbox) triggeredList.push('<span class="trigger-badge warn">异常标记</span>');
+      if (result.triggered?.abnormalKeyword) triggeredList.push('<span class="trigger-badge warn">关键词异常</span>');
+      if (result.triggered?.temperatureOutOfRange) triggeredList.push('<span class="trigger-badge warn">温度越界</span>');
+      if (result.triggered?.daysReachedMin) triggeredList.push('<span class="trigger-badge ok">天数达标</span>');
+      if (result.triggered?.daysExceedMax) triggeredList.push('<span class="trigger-badge warn">超时超限</span>');
+      if (triggeredList.length === 0) triggeredList.push('<span class="trigger-badge">无触发</span>');
+
+      const keywordHtml = result.keywordMatched && result.keywordMatched.length > 0
+        ? '<span class="kw-hit">' + result.keywordMatched.map(k => `<span class="kw-tag">${k}</span>`).join('') + '</span>'
+        : '<span class="kw-none">未命中</span>';
+
+      const tempInfo = result.temperatureCheck?.isMissing
+        ? '未提供'
+        : result.temperatureCheck?.inRange
+          ? `<span class="temp-ok">${result.temperatureCheck.value}℃ ✓ 在安全范围内</span>`
+          : `<span class="temp-bad">${result.temperatureCheck.value}℃ ✗ 超出范围</span>`;
+
+      const statusChangeHtml = result.statusChanged
+        ? `<span class="status-change">
+             <span class="old-status">${result.currentStatus}</span>
+             <span class="arrow">→</span>
+             <span class="new-status pill ${result.isAbnormal ? 'warn' : result.willBeReady ? 'ok' : ''}">${result.nextStatus}</span>
+           </span>`
+        : `<span class="status-no-change">保持 <span class="pill">${result.currentStatus}</span></span>`;
+
+      const daysChangeHtml = result.daysChanged
+        ? `<span class="days-change">${result.currentDays} 天 → <strong>${result.newDays}</strong> 天</span>`
+        : `<span>${result.currentDays} 天</span>`;
+
+      el.innerHTML = `
+        <div class="result-header">
+          <div class="result-title">
+            <span class="result-icon">${result.isAbnormal ? '⚠️' : result.willBeReady ? '✅' : '🔄'}</span>
+            <strong>试算结果</strong>
+            ${result.customRuleUsed ? '<span class="custom-rule-badge">使用编辑中规则</span>' : ''}
+          </div>
+          <div class="rule-info">
+            命中规则：<strong>${result.ruleName}</strong>（原料：${result.ruleSource}）
+          </div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-card">
+            <div class="result-label">状态变化</div>
+            <div class="result-value">${statusChangeHtml}</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">天数变化</div>
+            <div class="result-value">${daysChangeHtml}</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">温度检查</div>
+            <div class="result-value">${tempInfo}</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">关键词命中</div>
+            <div class="result-value">${keywordHtml}</div>
+          </div>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-title">触发项</div>
+          <div class="trigger-list">${triggeredList.join('')}</div>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-title">判定依据</div>
+          <div class="reasons-list">
+            ${result.reasons && result.reasons.length > 0
+              ? result.reasons.map(r => `<div class="reason-item">• ${r}</div>`).join('')
+              : '<div class="reason-item none">继续发酵中，暂无触发项</div>'
+            }
+          </div>
+        </div>
+
+        <div class="result-footer">
+          <span class="meta">试算模式：${getTrialMode() === 'saved' ? '已保存规则' : '编辑中规则'}</span>
+          <span class="meta">批次：${result.item?.code || result.item?.id}</span>
+        </div>
+      `;
+    }
+
+    async function doTest() {
+      const batchId = document.getElementById('testBatch').value;
+      if (!batchId) {
+        alert('请先选择一个批次');
+        return;
+      }
+
+      const observation = collectObservation();
+      const trialMode = getTrialMode();
+      const customRule = trialMode === 'editing' ? getEditingRule() : null;
+
+      try {
+        const result = await api('/api/rules/try-evaluate', {
+          method: 'POST',
+          body: JSON.stringify({ itemId: batchId, observation, customRule })
+        });
+        renderTrialResult(result);
+      } catch (err) {
+        alert('试算失败：' + err.message);
+      }
+    }
+
+    function autoTryEvaluate() {
+      const batchId = document.getElementById('testBatch').value;
+      if (!batchId) return;
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(doTest, 300);
+    }
+
+    function resetTrial() {
+      document.getElementById('testBatch').value = '';
+      document.getElementById('testTemp').value = '';
+      document.getElementById('testSmell').value = '';
+      document.getElementById('testFiber').value = '';
+      document.getElementById('testAbnormalNote').value = '';
+      document.getElementById('testAbnormal').value = '';
+      document.getElementById('batchInfo').style.display = 'none';
+      document.getElementById('testResult').style.display = 'none';
+    }
+
+    function onTrialModeChange() {
+      const mode = getTrialMode();
+      const hintEl = document.getElementById('editingRuleHint');
+      hintEl.style.display = mode === 'editing' ? 'block' : 'none';
+      autoTryEvaluate();
+    }
+
+    function onFormInput() {
+      if (getTrialMode() === 'editing') {
+        autoTryEvaluate();
+      }
     }
 
     function renderFields() {
@@ -228,50 +470,13 @@ export function rulesPage() {
       });
     }
 
-    function renderSourceOptions() {
-      const sel = document.getElementById('testSource');
-      const uniqueSources = [...new Set(sources)].sort();
-      sel.innerHTML = '<option value="">（使用默认规则）</option>' +
-        uniqueSources.map(s => '<option value="' + s + '">' + s + '</option>').join('');
-    }
-
-    async function doTest() {
-      const source = document.getElementById('testSource').value || '';
-      const days = Number(document.getElementById('testDays').value) || 0;
-      const temp = document.getElementById('testTemp').value;
-      const smell = document.getElementById('testSmell').value;
-      const fiber = document.getElementById('testFiber').value;
-      const abnormalNote = document.getElementById('testAbnormalNote').value;
-
-      const item = { source, days };
-      const observation = { temperature: temp, smell, fiber, abnormalNote };
-      try {
-        const result = await api('/api/rules/evaluate', {
-          method: 'POST',
-          body: JSON.stringify({ item, observation })
-        });
-        const el = document.getElementById('testResult');
-        el.style.display = 'block';
-        el.className = 'test-result ' + (result.isAbnormal ? 'abnormal' : result.willBeReady ? 'ready' : 'normal');
-        el.innerHTML =
-          '<div class="result-header"><strong>匹配规则：</strong>' + result.rule.name + '（原料：' + (result.rule.source || '*') + '）</div>' +
-          '<div><strong>预计发酵天数：</strong>' + result.newDays + ' 天</div>' +
-          '<div><strong>预计新状态：</strong><span class="pill ' + (result.isAbnormal ? 'warn' : result.willBeReady ? 'ok' : '') + '">' + result.nextStatus + '</span></div>' +
-          '<div><strong>温度检查：</strong>' + (result.temperatureCheck.isMissing ? '未提供' : (result.temperatureCheck.inRange ? '在安全范围内 ✓' : '超出范围 ✗（' + result.temperatureCheck.value + '℃）')) + '</div>' +
-          '<div><strong>异常关键词匹配：</strong>' + (result.keywordMatched.length > 0 ? '命中 → ' + result.keywordMatched.join('、') : '未命中') + '</div>' +
-          '<div><strong>判定依据：</strong>' + (result.reasons.length > 0 ? result.reasons.join('；') : '继续发酵中') + '</div>';
-      } catch (err) {
-        alert('测试失败：' + err.message);
-      }
-    }
-
     async function load() {
       const data = await api('/api/rules');
       rules = data.rules || [];
-      const items = await api('/api/items');
+      items = await api('/api/items');
       sources = items.map(i => i.source).filter(Boolean);
       renderRules();
-      renderSourceOptions();
+      renderBatchOptions();
     }
 
     document.getElementById('ruleForm').onsubmit = async event => {
@@ -293,7 +498,28 @@ export function rulesPage() {
 
     document.getElementById('cancelBtn').onclick = resetForm;
     document.getElementById('testBtn').onclick = doTest;
+    document.getElementById('resetTrialBtn').onclick = resetTrial;
     document.getElementById('reload').onclick = load;
+
+    document.getElementById('testBatch').onchange = onBatchChange;
+    document.querySelectorAll('input[name="trialMode"]').forEach(radio => {
+      radio.onchange = onTrialModeChange;
+    });
+
+    const trialInputs = ['testTemp', 'testSmell', 'testFiber', 'testAbnormalNote', 'testAbnormal'];
+    trialInputs.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.oninput = autoTryEvaluate;
+        el.onchange = autoTryEvaluate;
+      }
+    });
+
+    const ruleFormInputs = document.querySelectorAll('#ruleForm input, #ruleForm select');
+    ruleFormInputs.forEach(input => {
+      input.oninput = onFormInput;
+      input.onchange = onFormInput;
+    });
 
     renderFields();
     resetForm();

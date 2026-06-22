@@ -3,7 +3,7 @@ import {
   newVatId, getVatById, computeVatBoard, parseObservationText, previewBatchImport,
   applyBatchImport, applyBatchInspections, validateInspectionRecord,
   listRules, getRuleById, createRule, updateRule, deleteRule, findRuleForSource,
-  evaluateFermentationStatus, isAbnormalObservation, ruleFields, autoStatusOptions,
+  evaluateFermentationStatus, tryEvaluateWithCustomRule, isAbnormalObservation, ruleFields, autoStatusOptions,
   listExperiments, getExperimentById, createExperiment, updateExperiment,
   deleteExperiment, addBatchesToExperiment, removeBatchFromExperiment,
   getExperimentWithAnalysis, buildReadinessReport, listReadyBatches,
@@ -382,6 +382,19 @@ export async function handleApi(req, res, url, method) {
     }
     const evaluation = evaluateFermentationStatus(db, item, observation);
     return send(res, 200, evaluation);
+  }
+
+  if (method === "POST" && url.pathname === "/api/rules/try-evaluate") {
+    const input = await body(req);
+    const { itemId, observation, customRule } = input;
+    if (!itemId) {
+      return send(res, 400, { error: "missing_item_id", message: "请选择要试算的批次" });
+    }
+    const result = tryEvaluateWithCustomRule(db, itemId, observation || {}, customRule || null);
+    if (!result.success) {
+      return send(res, 400, { error: "evaluation_failed", message: result.error });
+    }
+    return send(res, 200, result);
   }
 
   if (method === "GET" && url.pathname === "/api/rules/for-source") {

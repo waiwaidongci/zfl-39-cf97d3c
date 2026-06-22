@@ -8,6 +8,7 @@ import {
   ensureFermentationRules,
   findRuleForSource,
   evaluateFermentationStatus,
+  tryEvaluateWithCustomRule,
   createRule,
   updateRule,
   deleteRule,
@@ -738,6 +739,236 @@ Pf-002,26,正常酸味,松散,否,否`;
     assert(preview.matched.some(m => m.itemCode === "PF-001"), "应匹配到 PF-001");
     assert(preview.matched.some(m => m.itemCode === "PF-002"), "应匹配到 PF-002");
     assertEq(preview.unmatchedCount, 0, "不应有未匹配项");
+  }
+
+  console.log("\n26. 规则试算功能测试 - 基础接口验证");
+  {
+    const db = makeDb();
+    const obs = { temperature: "25", smell: "正常酸味", fiber: "松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-001", obs, null);
+    assertEq(result.success, true, "试算接口调用应成功");
+    assertEq(result.item.code, "PF-001", "返回的批次信息正确");
+    assertEq(result.currentDays, 5, "当前天数正确");
+    assertEq(result.newDays, 6, "新天数正确（+1）");
+    assertEq(result.currentStatus, "发酵中", "当前状态正确");
+    assertEq(result.customRuleUsed, false, "未使用自定义规则");
+  }
+
+  console.log("\n27. 规则试算功能测试 - 正常流程（无异常）");
+  {
+    const db = makeDb();
+    const obs = { temperature: "25", smell: "正常酸味", fiber: "松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-001", obs, null);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.nextStatus, "发酵中", "5天+1=6天 < 构树皮minDays=7，应为发酵中");
+    assertEq(result.isAbnormal, false, "不应标记为异常");
+    assertEq(result.willBeReady, false, "未到可抄纸");
+    assertEq(result.statusChanged, false, "状态无变化");
+    assertEq(result.daysChanged, true, "天数有变化");
+    assertEq(result.keywordMatched.length, 0, "无关键词命中");
+    assertEq(result.temperatureCheck.inRange, true, "温度在范围内");
+    assertEq(result.triggered.abnormalKeyword, false, "关键词未触发");
+    assertEq(result.triggered.temperatureOutOfRange, false, "温度未触发");
+    assertEq(result.triggered.daysReachedMin, false, "未达到最短天数");
+  }
+
+  console.log("\n28. 规则试算功能测试 - 异常关键词触发");
+  {
+    const db = makeDb();
+    const obs = { temperature: "25", smell: "有霉味", fiber: "结块严重", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-001", obs, null);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.nextStatus, "异常观察", "霉味+结块应触发异常观察");
+    assertEq(result.isAbnormal, true, "标记为异常");
+    assertEq(result.statusChanged, true, "状态发生变化");
+    assert(result.keywordMatched.length > 0, "有命中关键词");
+    assert(result.keywordMatched.includes("霉"), "应命中'霉'");
+    assert(result.keywordMatched.includes("结块"), "应命中'结块'");
+    assertEq(result.triggered.abnormalKeyword, true, "关键词触发");
+    assert(result.reasons.some(r => r.includes("异常关键词")), "原因包含关键词异常");
+  }
+
+  console.log("\n29. 规则试算功能测试 - 温度越界触发（低于下限）");
+  {
+    const db = makeDb();
+    const obs = { temperature: "10", smell: "微酸", fiber: "较松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-001", obs, null);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.nextStatus, "异常观察", "10℃低于构树皮18℃下限应触发异常");
+    assertEq(result.isAbnormal, true, "标记为异常");
+    assertEq(result.temperatureCheck.inRange, false, "温度超出范围");
+    assertEq(result.temperatureCheck.value, 10, "温度值正确");
+    assertEq(result.triggered.temperatureOutOfRange, true, "温度超限触发");
+    assert(result.reasons.some(r => r.includes("温度超出范围")), "原因包含温度超出范围");
+  }
+
+  console.log("\n30. 规则试算功能测试 - 温度越界触发（高于上限）");
+  {
+    const db = makeDb();
+    const obs = { temperature: "40", smell: "微酸", fiber: "较松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-001", obs, null);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.nextStatus, "异常观察", "40℃高于构树皮32℃上限应触发异常");
+    assertEq(result.temperatureCheck.inRange, false, "温度超出范围");
+    assertEq(result.temperatureCheck.value, 40, "温度值正确");
+    assertEq(result.triggered.temperatureOutOfRange, true, "温度超限触发");
+  }
+
+  console.log("\n31. 规则试算功能测试 - 天数达标触发");
+  {
+    const db = makeDb();
+    const obs = { temperature: "25", smell: "正常酸味", fiber: "松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-003", obs, null);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.currentDays, 10, "当前天数为10天");
+    assertEq(result.newDays, 11, "新天数为11天");
+    assertEq(result.nextStatus, "可抄纸", "11天 >= 竹浆默认规则minDays=7，应为可抄纸");
+    assertEq(result.willBeReady, true, "标记为可抄纸");
+    assertEq(result.statusChanged, true, "状态发生变化");
+    assertEq(result.triggered.daysReachedMin, true, "达到最短天数触发");
+    assert(result.reasons.some(r => r.includes("最短发酵天数")), "原因包含天数达标");
+  }
+
+  console.log("\n32. 规则试算功能测试 - 异常复选框触发");
+  {
+    const db = makeDb();
+    const obs = { temperature: "25", smell: "微酸", fiber: "松散", abnormal: "是" };
+    const result = tryEvaluateWithCustomRule(db, "PF-001", obs, null);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.nextStatus, "异常观察", "勾选异常应触发异常观察");
+    assertEq(result.isAbnormal, true, "标记为异常");
+    assertEq(result.triggered.abnormalCheckbox, true, "异常复选框触发");
+    assert(result.reasons.some(r => r.includes("异常标记")), "原因包含异常标记");
+  }
+
+  console.log("\n33. 规则试算功能测试 - 使用自定义规则参数试算");
+  {
+    const db = makeDb();
+    const customRule = {
+      name: "自定义测试规则",
+      source: "构树皮",
+      minDays: 3,
+      maxDays: 15,
+      temperatureMin: 20,
+      temperatureMax: 30,
+      abnormalKeywords: ["霉", "臭"],
+      autoStatusRules: {
+        onAbnormalKeyword: "异常观察",
+        onTemperatureOutOfRange: "异常观察",
+        onDaysReachedMin: "可抄纸",
+        onDaysExceedMax: "异常观察",
+      },
+    };
+    const obs = { temperature: "25", smell: "正常酸味", fiber: "松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-001", obs, customRule);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.customRuleUsed, true, "使用了自定义规则");
+    assertEq(result.ruleName, "自定义测试规则", "规则名称正确");
+    assertEq(result.currentDays, 5, "当前天数5天");
+    assertEq(result.newDays, 6, "新天数6天");
+    assertEq(result.nextStatus, "可抄纸", "自定义规则minDays=3，6>=3应为可抄纸");
+    assertEq(result.willBeReady, true, "标记为可抄纸");
+    assertEq(result.triggered.daysReachedMin, true, "达到自定义最短天数");
+  }
+
+  console.log("\n34. 规则试算功能测试 - 自定义规则修改温度范围后试算");
+  {
+    const db = makeDb();
+    const customRule = {
+      name: "宽松温度规则",
+      source: "构树皮",
+      minDays: 7,
+      maxDays: 21,
+      temperatureMin: 10,
+      temperatureMax: 40,
+      abnormalKeywords: ["霉", "臭", "腐"],
+      autoStatusRules: {
+        onAbnormalKeyword: "异常观察",
+        onTemperatureOutOfRange: "发酵中",
+        onDaysReachedMin: "可抄纸",
+        onDaysExceedMax: "异常观察",
+      },
+    };
+    const obs = { temperature: "12", smell: "正常酸味", fiber: "松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-001", obs, customRule);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.temperatureCheck.inRange, true, "12℃在自定义范围10~40内");
+    assertEq(result.triggered.temperatureOutOfRange, false, "温度未触发");
+    assertEq(result.nextStatus, "发酵中", "状态应为发酵中");
+  }
+
+  console.log("\n35. 规则试算功能测试 - 自定义规则+异常关键词同时触发");
+  {
+    const db = makeDb();
+    const customRule = {
+      name: "自定义关键词规则",
+      source: "桑树皮",
+      minDays: 7,
+      maxDays: 30,
+      temperatureMin: 15,
+      temperatureMax: 35,
+      abnormalKeywords: ["霉"],
+      autoStatusRules: {
+        onAbnormalKeyword: "发酵中",
+        onTemperatureOutOfRange: "异常观察",
+        onDaysReachedMin: "可抄纸",
+        onDaysExceedMax: "异常观察",
+      },
+    };
+    const obs = { temperature: "25", smell: "有霉味", fiber: "松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-002", obs, customRule);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.customRuleUsed, true, "使用了自定义规则");
+    assertEq(result.keywordMatched.includes("霉"), true, "命中关键词'霉'");
+    assertEq(result.nextStatus, "发酵中", "自定义规则onAbnormalKeyword=发酵中，状态应为发酵中");
+    assertEq(result.isAbnormal, false, "不标记为异常（自定义规则决定）");
+    assertEq(result.triggered.abnormalKeyword, true, "关键词触发标记正确");
+  }
+
+  console.log("\n36. 规则试算功能测试 - 无效批次处理");
+  {
+    const db = makeDb();
+    const obs = { temperature: "25", smell: "正常", fiber: "松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "NONEXISTENT", obs, null);
+    assertEq(result.success, false, "不存在的批次应返回失败");
+    assertEq(result.error, "批次不存在", "错误信息正确");
+  }
+
+  console.log("\n37. 规则试算功能测试 - 空温度视为缺失");
+  {
+    const db = makeDb();
+    const obs = { temperature: "", smell: "正常酸味", fiber: "松散", abnormal: "" };
+    const result = tryEvaluateWithCustomRule(db, "PF-001", obs, null);
+    assertEq(result.success, true, "试算成功");
+    assertEq(result.temperatureCheck.isMissing, true, "空温度视为缺失");
+    assertEq(result.temperatureCheck.inRange, true, "缺失温度不判为异常");
+    assertEq(result.nextStatus, "发酵中", "状态正常");
+  }
+
+  console.log("\n38. 规则试算功能测试 - 编辑规则时修改关键词后实时试算");
+  {
+    const db = makeDb();
+    const obs = { temperature: "25", smell: "有酸败味", fiber: "松散", abnormal: "" };
+    const rule1 = {
+      name: "旧规则",
+      source: "构树皮",
+      minDays: 7, maxDays: 21,
+      temperatureMin: 18, temperatureMax: 32,
+      abnormalKeywords: ["霉", "臭"],
+      autoStatusRules: { onAbnormalKeyword: "异常观察", onTemperatureOutOfRange: "异常观察", onDaysReachedMin: "可抄纸", onDaysExceedMax: "异常观察" },
+    };
+    const result1 = tryEvaluateWithCustomRule(db, "PF-001", obs, rule1);
+    assertEq(result1.keywordMatched.length, 0, "旧规则关键词不含'酸败'，无命中");
+    assertEq(result1.nextStatus, "发酵中", "无命中时状态正常");
+
+    const rule2 = {
+      ...rule1,
+      name: "新规则",
+      abnormalKeywords: ["霉", "臭", "酸败"],
+    };
+    const result2 = tryEvaluateWithCustomRule(db, "PF-001", obs, rule2);
+    assertEq(result2.keywordMatched.includes("酸败"), true, "新规则添加'酸败'后命中");
+    assertEq(result2.nextStatus, "异常观察", "命中后状态变为异常观察");
   }
 
   console.log("\n" + "=".repeat(50));
