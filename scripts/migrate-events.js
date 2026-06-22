@@ -179,15 +179,42 @@ async function main() {
       hasIssues = true;
     }
 
+    if (item.days !== undefined && item.days !== null && rebuilt.days !== item.days) {
+      warn(batchKey + ": 天数不匹配 - 期望 " + item.days + ", 重建 " + rebuilt.days);
+      hasIssues = true;
+    }
+
     const itemObsCount = (item.observations || []).length;
     if (rebuilt.totalObservations < itemObsCount) {
       warn(batchKey + ": 观察数不匹配 - 期望 " + itemObsCount + ", 重建 " + rebuilt.totalObservations);
       hasIssues = true;
     }
 
+    const itemLogCount = (item.logs || []).length;
+    if ((rebuilt.logs || []).length < itemLogCount) {
+      warn(batchKey + ": 日志数不匹配 - 期望 >= " + itemLogCount + ", 重建 " + (rebuilt.logs || []).length);
+      hasIssues = true;
+    }
+
+    if (itemObsCount > 0 && rebuilt.latestObservation) {
+      const lastOriginal = (item.observations || [])[itemObsCount - 1];
+      if (lastOriginal.temperature && rebuilt.latestObservation.temperature !== lastOriginal.temperature) {
+        warn(batchKey + ": 最近观察温度不匹配 - 期望 " + lastOriginal.temperature + ", 重建 " + rebuilt.latestObservation.temperature);
+        hasIssues = true;
+      }
+    }
+
+    const originalAbnormal =
+      ((item.logs || []).filter(l => l.abnormal).length) +
+      ((item.observations || []).filter(o => o.abnormal).length);
+    if ((rebuilt.abnormalCount || 0) < originalAbnormal) {
+      warn(batchKey + ": 异常数不匹配 - 期望 >= " + originalAbnormal + ", 重建 " + (rebuilt.abnormalCount || 0));
+      hasIssues = true;
+    }
+
     if (rebuilt._eventIds && rebuilt._eventIds.length > 0) {
       if (!hasIssues) {
-        pass(batchKey + ": 重建成功 (" + rebuilt._eventIds.length + " events)");
+        pass(batchKey + ": 重建成功 (状态=" + rebuilt.status + ", 天数=" + rebuilt.days + ", 事件=" + rebuilt._eventIds.length + ")");
         rebuildPassed++;
       } else {
         rebuildFailed++;
