@@ -29,6 +29,111 @@
       "_migratedFrom": null
     },
     {
+      "id": "EVT-1782098478680-b8pyou",
+      "type": "batch.created",
+      "batchId": "SIM-1",
+      "batchCode": "SIM-1",
+      "timestamp": "2026-06-22T02:30:00.000Z",
+      "data": {
+        "source": "桑皮",
+        "vat": "",
+        "vatId": "",
+        "owner": "",
+        "expectedDays": 7,
+        "startDate": "",
+        "status": "入缸",
+        "step": "建档",
+        "note": "创建纸浆批次，入"
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "item.initial_state"
+    },
+    {
+      "id": "EVT-1782098478680-fltbam",
+      "type": "observation.recorded",
+      "batchId": "SIM-1",
+      "batchCode": "SIM-1",
+      "timestamp": "2026-06-22T02:30:00.000Z",
+      "data": {
+        "temperature": "25",
+        "smell": "正常酸味",
+        "fiber": "松散",
+        "changedWater": "未换水",
+        "abnormalNote": "",
+        "originalIndex": 0
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度25，正常酸味，松散，换水:未换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[0]"
+    },
+    {
+      "id": "EVT-1782098478680-ep6ps6",
+      "type": "rule.evaluated",
+      "batchId": "SIM-1",
+      "batchCode": "SIM-1",
+      "timestamp": "2026-06-22T02:30:00.000Z",
+      "data": {
+        "ruleId": "migrated",
+        "ruleName": "迁移推断规则",
+        "nextStatus": "发酵中",
+        "newDays": 2,
+        "reasons": [
+          "迁移时从观察记录推断"
+        ],
+        "keywordMatched": false,
+        "triggered": {
+          "abnormalChecked": false,
+          "keywordAbnormal": false,
+          "temperatureAbnormal": false
+        },
+        "note": "规则判定（迁移）：发酵中（迁移时从观察记录推断）",
+        "originalIndex": 0
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[0].rule_evaluation"
+    },
+    {
+      "id": "EVT-1782098478680-96mm9u",
+      "type": "note.added",
+      "batchId": "SIM-1",
+      "batchCode": "SIM-1",
+      "timestamp": "2026-06-22T02:30:00.000Z",
+      "data": {
+        "step": "观察",
+        "note": "温度25，正常酸味，松散",
+        "originalIndex": 0
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[0]"
+    },
+    {
       "id": "EVT-1782095960691-0atcg2",
       "type": "batch.imported",
       "batchId": null,
@@ -50,6 +155,29 @@
       "version": 1,
       "_migrated": false,
       "_migratedFrom": null
+    },
+    {
+      "id": "EVT-1782098478680-4ecp36",
+      "type": "status.changed",
+      "batchId": "SIM-1",
+      "batchCode": "SIM-1",
+      "timestamp": "2026-06-22T03:21:18.680Z",
+      "data": {
+        "oldStatus": "入缸",
+        "newStatus": "发酵中",
+        "newDays": 2,
+        "step": "状态",
+        "note": "迁移时状态同步：发酵中"
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "item.status_reconciliation"
     }
   ],
   "fermentationRules": [
@@ -109,6 +237,42 @@
           "abnormal": false
         }
       ]
+    }
+  ],
+  "experiments": [
+    {
+      "id": "EXP-00000001",
+      "name": "构树皮 vs 桑皮",
+      "description": "对比不同原料的发酵表现差异",
+      "batchIds": [],
+      "createdAt": "2026-06-10T00:00:00.000Z",
+      "updatedAt": "2026-06-10T00:00:00.000Z"
+    }
+  ],
+  "handovers": [],
+  "syncMetadata": {
+    "workshopId": "WS-mqonfm0w-4oc5qc",
+    "workshopName": "本地工坊",
+    "lastExportAt": "2026-06-22T03:21:38.624Z",
+    "lastImportAt": null
+  },
+  "syncHistory": [
+    {
+      "id": "SYNC-1782098498624-y2gzbt",
+      "type": "export",
+      "remoteWorkshopId": null,
+      "remoteWorkshopName": null,
+      "timestamp": "2026-06-22T03:21:38.624Z",
+      "result": {
+        "itemCount": 1,
+        "eventCount": 7,
+        "vatCount": 0,
+        "ruleCount": 1,
+        "workshopId": "WS-mqonfm0w-4oc5qc",
+        "workshopName": "本地工坊"
+      },
+      "conflictCount": 0,
+      "resolvedCount": 0
     }
   ]
 }

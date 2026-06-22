@@ -9,6 +9,7 @@ import { experimentsPage } from "../views/experiments.js";
 import { reportPage } from "../views/report.js";
 import { handoverPage } from "../views/handover.js";
 import { auditPage } from "../views/audit.js";
+import { syncPage } from "../views/sync.js";
 
 export function handlePages(req, res, url) {
   if (url.pathname === "/") {
@@ -54,6 +55,10 @@ export function handlePages(req, res, url) {
   }
   if (url.pathname === "/audit") {
     html(res, auditPage());
+    return true;
+  }
+  if (url.pathname === "/sync") {
+    html(res, syncPage());
     return true;
   }
   return false;

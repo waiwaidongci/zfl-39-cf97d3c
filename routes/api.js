@@ -12,6 +12,8 @@ import {
   EVENT_TYPES, EVENT_TYPE_LABELS, createEvent, appendEvent, appendEvents,
   listEvents, getEventById, getEventsByBatch, rebuildBatchState,
   getEventStats, runEventMigration, verifyMigration,
+  setWorkshopInfo, createExportPackage, validateImportPackage, detectConflicts,
+  resolveConflict, applyMerge, recordExport, listSyncHistory, getSyncHistoryById,
 } from "../lib/db.js";
 import { buildAllTimeline, uniqueValues } from "../lib/timeline.js";
 
@@ -578,6 +580,74 @@ export async function handleApi(req, res, url, method) {
   if (method === "POST" && url.pathname === "/api/events/verify") {
     const result = verifyMigration(db);
     return send(res, 200, result);
+  }
+
+  if (method === "GET" && url.pathname === "/api/sync/workshop") {
+    if (!db.syncMetadata) db.syncMetadata = {};
+    return send(res, 200, {
+      workshopId: db.syncMetadata.workshopId || ("WS-" + Date.now().toString(36)),
+      workshopName: db.syncMetadata.workshopName || "本地工坊",
+      lastExportAt: db.syncMetadata.lastExportAt || null,
+      lastImportAt: db.syncMetadata.lastImportAt || null,
+    });
+  }
+
+  if (method === "POST" && url.pathname === "/api/sync/workshop") {
+    const input = await body(req);
+    const result = setWorkshopInfo(db, input.workshopName, input.workshopId);
+    await saveDb(db);
+    return send(res, 200, { ...result, lastExportAt: db.syncMetadata?.lastExportAt || null, lastImportAt: db.syncMetadata?.lastImportAt || null });
+  }
+
+  if (method === "POST" && url.pathname === "/api/sync/export") {
+    const input = await body(req);
+    const options = {};
+    if (input.batchCodes && Array.isArray(input.batchCodes)) options.batchCodes = input.batchCodes;
+    if (input.since) options.since = input.since;
+    const result = createExportPackage(db, options);
+    recordExport(db, result.stats);
+    await saveDb(db);
+    return send(res, 200, result);
+  }
+
+  if (method === "POST" && url.pathname === "/api/sync/import/preview") {
+    const input = await body(req);
+    const pkg = input.package;
+    const validation = validateImportPackage(pkg);
+    if (!validation.valid) {
+      return send(res, 400, { error: "invalid_package", message: "导出包格式验证失败", validation });
+    }
+    const conflictResult = detectConflicts(db, pkg);
+    return send(res, 200, { validation, conflicts: conflictResult.conflicts, summary: conflictResult.summary });
+  }
+
+  if (method === "POST" && url.pathname === "/api/sync/import/apply") {
+    const input = await body(req);
+    const pkg = input.package;
+    const resolvedConflicts = input.resolvedConflicts || [];
+    const validation = validateImportPackage(pkg);
+    if (!validation.valid) {
+      return send(res, 400, { error: "invalid_package", message: "导出包格式验证失败", validation });
+    }
+    const result = applyMerge(db, pkg, resolvedConflicts);
+    await saveDb(db);
+    return send(res, 200, result);
+  }
+
+  if (method === "GET" && url.pathname === "/api/sync/history") {
+    const type = url.searchParams.get("type") || "";
+    const limit = Number(url.searchParams.get("limit")) || 0;
+    const options = {};
+    if (type) options.type = type;
+    if (limit > 0) options.limit = limit;
+    return send(res, 200, listSyncHistory(db, options));
+  }
+
+  const syncHistoryMatch = url.pathname.match(/^\/api\/sync\/history\/([^/]+)$/);
+  if (syncHistoryMatch && method === "GET") {
+    const record = getSyncHistoryById(db, syncHistoryMatch[1]);
+    if (!record) return send(res, 404, { error: "history_not_found" });
+    return send(res, 200, record);
   }
 
   return null;
