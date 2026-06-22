@@ -82,6 +82,11 @@ async function main() {
   console.log("  总 observations 数:", totalObservations);
   console.log("  总异常记录数:", totalAbnormal);
   console.log("  预计迁移事件数:", totalLogs + totalObservations);
+  const hadEvents = Array.isArray(db.events) && db.events.length > 0;
+  const existingEventCount = hadEvents ? db.events.length : 0;
+  if (hadEvents) {
+    info("检测到现有事件流 " + existingEventCount + " 条，将按重复运行验证处理");
+  }
 
   section("步骤 3: 首次运行迁移");
   const db1 = JSON.parse(raw);
@@ -89,6 +94,8 @@ async function main() {
 
   if (result1.migrated) {
     pass("迁移成功执行");
+  } else if (hadEvents) {
+    pass("已有事件流，首次步骤未新增事件（重复运行场景）");
   } else {
     fail("迁移未执行");
   }
@@ -98,6 +105,8 @@ async function main() {
   const expectedEvents = totalLogs + totalObservations;
   if (result1.totalEvents >= expectedEvents) {
     pass("迁移事件数符合预期（>= " + expectedEvents + "）");
+  } else if (hadEvents && getEventStats(db1).totalEvents >= expectedEvents) {
+    pass("现有事件总数符合预期（>= " + expectedEvents + "）");
   } else {
     fail("迁移事件数不足: 期望 " + expectedEvents + ", 实际 " + result1.totalEvents);
   }
@@ -233,12 +242,13 @@ async function main() {
   pass("已保存迁移后的数据到 " + dbPath);
 
   section("验证总结");
-  console.log("  ✓ 迁移执行: " + (result1.migrated ? "通过" : "失败"));
+  const migrationExecutionPassed = result1.migrated || hadEvents;
+  console.log("  ✓ 迁移执行: " + (migrationExecutionPassed ? "通过" : "失败"));
   console.log("  ✓ 幂等性: " + (!result2.migrated ? "通过" : "失败"));
   console.log("  ✓ 数据完整性: " + (verifyResult.valid ? "通过" : "失败"));
   console.log("  ✓ 状态重建: " + rebuildPassed + " / " + items.length + " 通过");
 
-  const allPassed = result1.migrated && !result2.migrated && verifyResult.valid && rebuildFailed === 0;
+  const allPassed = migrationExecutionPassed && !result2.migrated && verifyResult.valid && rebuildFailed === 0;
 
   if (allPassed) {
     console.log("\n🎉 所有验证通过！");
