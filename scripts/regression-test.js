@@ -701,13 +701,13 @@ PF-004,25,正常酸味,松散,是,否`;
 pf-001,25.5℃,微酸,松散,已换,否
 PF-002,12°C,霉味,结块,未换,有
 pf-003,28摄氏度,正常酸味,非常松散,换过,否
-PF-999,25,正常酸味,松散,否,否`;
+zz-999,25℃,正常酸味,松散,换过,否`;
     const parsed = parseObservationText(csvText);
     const preview = previewBatchImport(db, parsed);
 
     assertEq(preview.matchedCount, 3, "应匹配3个批次（pf-001修正后匹配PF-001，pf-003修正后匹配PF-003）");
-    assertEq(preview.correctedCount >= 2, true, "应至少有2行被自动修正");
-    assert(preview.allCorrections.length >= 2, "预览应包含 allCorrections");
+    assertEq(preview.correctedCount, 4, "应统计匹配和未匹配行中的全部自动修正行");
+    assertEq(preview.allCorrections.length, 4, "预览应包含匹配和未匹配行的 allCorrections");
 
     const pf001 = preview.matched.find(m => m.itemCode === "PF-001");
     assert(pf001, "小写 pf-001 修正为大写 PF-001 后应匹配成功");
@@ -721,8 +721,9 @@ PF-999,25,正常酸味,松散,否,否`;
     assertEq(pf003.observation.temperature, "28", "导入温度应为修正后的数值28");
     assertEq(pf003.observation.changedWater, "是", "导入换水应为修正后的是");
 
-    const unmatched = preview.unmatched.find(u => u.row.code === "PF-999");
-    assert(unmatched, "PF-999 应未匹配");
+    const unmatched = preview.unmatched.find(u => u.row.code === "ZZ-999");
+    assert(unmatched, "zz-999 修正为 ZZ-999 后仍应未匹配");
+    assert(unmatched.corrections.length > 0, "未匹配记录也应保留自动修正信息");
   }
 
   console.log("\n25. 自动修正功能测试 - 大小写差异导致原本无法匹配的批次现在可以匹配");
