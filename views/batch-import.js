@@ -56,12 +56,32 @@ PF-003,24.8,霉味,结块,否,是"></textarea>
       <div class="stats-bar" id="statsBar"></div>
 
       <div class="preview-panels">
+        <div class="panel corrected-panel" id="correctedPanel" style="display:none">
+          <h2>🔧 可自动修正项 <span class="count-badge corrected" id="correctedCount">0</span></h2>
+          <div class="table-wrapper">
+            <table id="correctedTable">
+              <thead>
+                <tr>
+                  <th>行号</th>
+                  <th>字段</th>
+                  <th>原始值</th>
+                  <th>修正后</th>
+                  <th>修正说明</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="correction-hint">以上字段将在确认导入时自动按修正后的值写入</div>
+        </div>
+
         <div class="panel matched-panel">
           <h2>匹配成功的记录 <span class="count-badge" id="matchedCount">0</span></h2>
           <div class="table-wrapper">
             <table id="matchedTable">
               <thead>
                 <tr>
+                  <th>修正</th>
                   <th>批次编号</th>
                   <th>原料/缸</th>
                   <th>当前状态</th>
@@ -239,14 +259,42 @@ PF-003,24.8,霉味,结块,否,是"></textarea>
       const statsBar = document.getElementById('statsBar');
       statsBar.innerHTML =
         '<div class="stat-chip"><span>总行数</span><strong>' + preview.totalRows + '</strong></div>' +
+        '<div class="stat-chip corrected"><span>自动修正</span><strong>' + (preview.correctedCount || 0) + '</strong></div>' +
         '<div class="stat-chip ok"><span>匹配成功</span><strong>' + preview.matchedCount + '</strong></div>' +
         '<div class="stat-chip warn"><span>无法匹配</span><strong>' + preview.unmatchedCount + '</strong></div>' +
         '<div class="stat-chip warn"><span>异常预警</span><strong>' + preview.abnormalCount + '</strong></div>';
 
+      const correctedPanel = document.getElementById('correctedPanel');
+      if (preview.correctedCount > 0) {
+        correctedPanel.style.display = 'block';
+        document.getElementById('correctedCount').textContent = preview.correctedCount;
+        const correctedTbody = document.querySelector('#correctedTable tbody');
+        const rows = [];
+        (preview.allCorrections || []).forEach(item => {
+          item.corrections.forEach(c => {
+            rows.push('<tr>' +
+              '<td>' + item.rowIndex + '</td>' +
+              '<td><strong>' + c.label + '</strong></td>' +
+              '<td class="raw-cell original-value">' + c.original + '</td>' +
+              '<td class="corrected-value">→ ' + c.corrected + '</td>' +
+              '<td class="correction-reason">' + c.reason + '</td>' +
+              '</tr>');
+          });
+        });
+        correctedTbody.innerHTML = rows.join('');
+      } else {
+        correctedPanel.style.display = 'none';
+      }
+
       const matchedTbody = document.querySelector('#matchedTable tbody');
       matchedTbody.innerHTML = preview.matched.map(m => {
         const obs = m.observation;
+        const hasCorrection = m.corrections && m.corrections.length > 0;
+        const correctionBadge = hasCorrection
+          ? '<span class="correction-badge" title="' + m.corrections.map(c => c.label + ': ' + c.original + ' → ' + c.corrected).join('; ') + '">🔧 ' + m.corrections.length + '</span>'
+          : '<span class="correction-badge none">-</span>';
         return '<tr>' +
+          '<td>' + correctionBadge + '</td>' +
           '<td><strong>' + m.itemCode + '</strong></td>' +
           '<td>' + (m.itemName || '-') + ' / ' + (m.vat || '-') + '</td>' +
           '<td><span class="pill">' + m.currentStatus + '</span></td>' +

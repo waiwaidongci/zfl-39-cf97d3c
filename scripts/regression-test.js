@@ -19,6 +19,7 @@ import {
   isAbnormalObservation,
   previewBatchImport,
   parseObservationText,
+  autoCorrectFields,
 } from "../lib/db.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -605,6 +606,137 @@ PF-999,25,正常酸味,松散,否,否`;
     assertEq(case4.triggered.abnormalKeyword, true, "case4: 关键词命中");
     assertEq(case4.triggered.temperatureOutOfRange, true, "case4: 温度超限");
     assertEq(case4.triggered.daysReachedMin, false, "case4: 天数不足不影响其他triggered");
+  }
+
+  console.log("\n22. 自动修正功能测试 - autoCorrectFields 单元测试");
+  {
+    const r1 = autoCorrectFields({ code: "pf-001" });
+    assertEq(r1.corrected.code, "PF-001", "批次编号应从小写转为大写");
+    assert(r1.corrections.some(c => c.field === "code" && c.reason.includes("大写")), "应记录批次编号大写修正原因");
+
+    const r2 = autoCorrectFields({ code: " PF-001 " });
+    assertEq(r2.corrected.code, "PF-001", "批次编号应去除前后空白字符");
+
+    const r3 = autoCorrectFields({ temperature: "25.5℃" });
+    assertEq(r3.corrected.temperature, "25.5", "温度应去除℃单位");
+    assert(r3.corrections.some(c => c.field === "temperature"), "应记录温度单位修正");
+
+    const r4 = autoCorrectFields({ temperature: "  26°C  " });
+    assertEq(r4.corrected.temperature, "26", "温度应去除°C单位和空白");
+
+    const r5 = autoCorrectFields({ temperature: "27摄氏度" });
+    assertEq(r5.corrected.temperature, "27", "温度应去除摄氏度文字");
+
+    const r6 = autoCorrectFields({ changedWater: "已换" });
+    assertEq(r6.corrected.changedWater, "是", '换水"已换"应修正为"是"');
+
+    const r7 = autoCorrectFields({ changedWater: "换过" });
+    assertEq(r7.corrected.changedWater, "是", '换水"换过"应修正为"是"');
+
+    const r8 = autoCorrectFields({ changedWater: "未换" });
+    assertEq(r8.corrected.changedWater, "否", '换水"未换"应修正为"否"');
+
+    const r9 = autoCorrectFields({ changedWater: "换了" });
+    assertEq(r9.corrected.changedWater, "是", '换水"换了"应修正为"是"');
+
+    const r10 = autoCorrectFields({ changedWater: "没换" });
+    assertEq(r10.corrected.changedWater, "否", '换水"没换"应修正为"否"');
+
+    const r11 = autoCorrectFields({ abnormal: "有" });
+    assertEq(r11.corrected.abnormal, "是", '异常"有"应修正为"是"');
+
+    const r12 = autoCorrectFields({ abnormal: "正常" });
+    assertEq(r12.corrected.abnormal, "否", '异常"正常"应修正为"否"');
+
+    const r13 = autoCorrectFields({ smell: "  微酸  " });
+    assertEq(r13.corrected.smell, "微酸", "气味应去除前后空白");
+
+    const r14 = autoCorrectFields({ fiber: "松散  " });
+    assertEq(r14.corrected.fiber, "松散", "纤维应去除前后空白");
+
+    const r15 = autoCorrectFields({ code: "PF-001", temperature: "25", changedWater: "是", abnormal: "否" });
+    assertEq(r15.corrections.length, 0, "标准格式数据不应产生任何修正");
+  }
+
+  console.log("\n23. 自动修正功能测试 - parseObservationText 集成测试");
+  {
+    const csvText = `批次编号,温度,气味,纤维松散度,是否换水,异常
+pf-001,25.5℃,微酸,松散,已换,无
+ PF-002 , 26°C ,正常酸味, 较松散 ,换过,有
+pf-003,27摄氏度,正常,松散,未换,正常
+PF-004,25,正常酸味,松散,是,否`;
+    const parsed = parseObservationText(csvText);
+    assertEq(parsed.rowCount, 4, "应解析出4行数据");
+    assertEq(parsed.correctedRowCount, 3, "应有3行数据被修正（第4行无修正）");
+    assert(parsed.allCorrections.length >= 3, "allCorrections 应包含修正记录");
+
+    const row0 = parsed.rows[0];
+    assertEq(row0.code, "PF-001", "第1行批次编号应从小写转为大写");
+    assertEq(row0.temperature, "25.5", "第1行温度应去除℃单位");
+    assertEq(row0.changedWater, "是", '第1行换水"已换"应修正为"是"');
+    assertEq(row0.abnormal, "否", '第1行异常"无"应修正为"否"');
+    assert(row0._corrections.length >= 4, "第1行应记录至少4处修正");
+
+    const row1 = parsed.rows[1];
+    assertEq(row1.code, "PF-002", "第2行批次编号应去除空白");
+    assertEq(row1.temperature, "26", "第2行温度应去除°C和空白");
+    assertEq(row1.smell, "正常酸味", "第2行气味应去除前后空白");
+    assertEq(row1.fiber, "较松散", "第2行纤维应去除前后空白");
+    assertEq(row1.changedWater, "是", '第2行换水"换过"应修正为"是"');
+    assertEq(row1.abnormal, "是", '第2行异常"有"应修正为"是"');
+
+    const row2 = parsed.rows[2];
+    assertEq(row2.temperature, "27", "第3行温度应去除摄氏度文字");
+    assertEq(row2.changedWater, "否", '第3行换水"未换"应修正为"否"');
+    assertEq(row2.abnormal, "否", '第3行异常"正常"应修正为"否"');
+
+    const row3 = parsed.rows[3];
+    assertEq(row3._corrections.length, 0, "第4行标准格式应无修正");
+  }
+
+  console.log("\n24. 自动修正功能测试 - previewBatchImport 预览集成测试");
+  {
+    const db = makeDb();
+    const csvText = `批次编号,温度,气味,纤维松散度,是否换水,异常
+pf-001,25.5℃,微酸,松散,已换,否
+PF-002,12°C,霉味,结块,未换,有
+pf-003,28摄氏度,正常酸味,非常松散,换过,否
+PF-999,25,正常酸味,松散,否,否`;
+    const parsed = parseObservationText(csvText);
+    const preview = previewBatchImport(db, parsed);
+
+    assertEq(preview.matchedCount, 3, "应匹配3个批次（pf-001修正后匹配PF-001，pf-003修正后匹配PF-003）");
+    assertEq(preview.correctedCount >= 2, true, "应至少有2行被自动修正");
+    assert(preview.allCorrections.length >= 2, "预览应包含 allCorrections");
+
+    const pf001 = preview.matched.find(m => m.itemCode === "PF-001");
+    assert(pf001, "小写 pf-001 修正为大写 PF-001 后应匹配成功");
+    assertEq(pf001.observation.temperature, "25.5", "导入温度应为修正后的数值25.5");
+    assertEq(pf001.observation.changedWater, "是", "导入换水应为修正后的是");
+    assert(pf001.corrections.length > 0, "PF-001 应有修正记录");
+    assert(pf001.original, "PF-001 应保留原始值");
+
+    const pf003 = preview.matched.find(m => m.itemCode === "PF-003");
+    assert(pf003, "小写 pf-003 修正为大写 PF-003 后应匹配成功");
+    assertEq(pf003.observation.temperature, "28", "导入温度应为修正后的数值28");
+    assertEq(pf003.observation.changedWater, "是", "导入换水应为修正后的是");
+
+    const unmatched = preview.unmatched.find(u => u.row.code === "PF-999");
+    assert(unmatched, "PF-999 应未匹配");
+  }
+
+  console.log("\n25. 自动修正功能测试 - 大小写差异导致原本无法匹配的批次现在可以匹配");
+  {
+    const db = makeDb();
+    const csvText = `批次编号,温度,气味,纤维松散度,是否换水,异常
+pf-001,25,微酸,松散,否,否
+Pf-002,26,正常酸味,松散,否,否`;
+    const parsed = parseObservationText(csvText);
+    const preview = previewBatchImport(db, parsed);
+    assertEq(preview.matchedCount, 2, "pf-001 和 Pf-002 经大小写修正后应都能匹配到对应批次");
+    assert(preview.matched.some(m => m.itemCode === "PF-001"), "应匹配到 PF-001");
+    assert(preview.matched.some(m => m.itemCode === "PF-002"), "应匹配到 PF-002");
+    assertEq(preview.unmatchedCount, 0, "不应有未匹配项");
   }
 
   console.log("\n" + "=".repeat(50));

@@ -94,7 +94,7 @@ textarea {
 
 .stats-bar {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -126,6 +126,61 @@ textarea {
 
 .stat-chip.warn strong {
   color: var(--warn);
+}
+
+.stat-chip.corrected strong {
+  color: #e67e22;
+}
+
+.count-badge.corrected {
+  background: #fff5e6;
+  color: #e67e22;
+}
+
+.corrected-panel {
+  border-color: #f0c674;
+  background: #fffaf0;
+}
+
+.corrected-panel h2 {
+  color: #e67e22;
+}
+
+.correction-hint {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.original-value {
+  text-decoration: line-through;
+  color: var(--warn);
+}
+
+.corrected-value {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.correction-reason {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.correction-badge {
+  display: inline-block;
+  background: #fff5e6;
+  color: #e67e22;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.correction-badge.none {
+  background: var(--bg);
+  color: var(--muted);
 }
 
 .preview-panels {
@@ -297,6 +352,10 @@ tbody tr:hover {
 
   .stats-bar {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-bar .stat-chip:nth-child(5) {
+    grid-column: span 2;
   }
 
   .confirm-section {
