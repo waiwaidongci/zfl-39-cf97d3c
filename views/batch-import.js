@@ -105,6 +105,7 @@ PF-003,24.8,霉味,结块,否,是"></textarea>
               <thead>
                 <tr>
                   <th>行号</th>
+                  <th>修正</th>
                   <th>原始内容</th>
                   <th>原因</th>
                 </tr>
@@ -166,6 +167,16 @@ PF-003,24.8,霉味,结块,否,是"></textarea>
   <script>
     let currentPreview = null;
     let currentTab = 'paste';
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     async function api(path, options) {
       const res = await fetch(path, options && options.body ? { ...options, headers:{ 'Content-Type':'application/json' } } : options);
@@ -274,10 +285,10 @@ PF-003,24.8,霉味,结块,否,是"></textarea>
           item.corrections.forEach(c => {
             rows.push('<tr>' +
               '<td>' + item.rowIndex + '</td>' +
-              '<td><strong>' + c.label + '</strong></td>' +
-              '<td class="raw-cell original-value">' + c.original + '</td>' +
-              '<td class="corrected-value">→ ' + c.corrected + '</td>' +
-              '<td class="correction-reason">' + c.reason + '</td>' +
+              '<td><strong>' + escapeHtml(c.label) + '</strong></td>' +
+              '<td class="raw-cell original-value">' + escapeHtml(c.original) + '</td>' +
+              '<td class="corrected-value">→ ' + escapeHtml(c.corrected) + '</td>' +
+              '<td class="correction-reason">' + escapeHtml(c.reason) + '</td>' +
               '</tr>');
           });
         });
@@ -291,19 +302,19 @@ PF-003,24.8,霉味,结块,否,是"></textarea>
         const obs = m.observation;
         const hasCorrection = m.corrections && m.corrections.length > 0;
         const correctionBadge = hasCorrection
-          ? '<span class="correction-badge" title="' + m.corrections.map(c => c.label + ': ' + c.original + ' → ' + c.corrected).join('; ') + '">🔧 ' + m.corrections.length + '</span>'
+          ? '<span class="correction-badge" title="' + escapeHtml(m.corrections.map(c => c.label + ': ' + c.original + ' → ' + c.corrected).join('; ')) + '">🔧 ' + m.corrections.length + '</span>'
           : '<span class="correction-badge none">-</span>';
         return '<tr>' +
           '<td>' + correctionBadge + '</td>' +
-          '<td><strong>' + m.itemCode + '</strong></td>' +
-          '<td>' + (m.itemName || '-') + ' / ' + (m.vat || '-') + '</td>' +
-          '<td><span class="pill">' + m.currentStatus + '</span></td>' +
-          '<td>' + (obs.temperature || '-') + '</td>' +
-          '<td>' + (obs.smell || '-') + '</td>' +
-          '<td>' + (obs.fiber || '-') + '</td>' +
-          '<td>' + (obs.changedWater || '-') + '</td>' +
-          '<td>' + (obs.abnormal || '-') + '</td>' +
-          '<td><span class="pill ' + (m.abnormal ? 'warn' : m.willBeReady ? 'ok' : '') + '">' + m.newStatus + '</span></td>' +
+          '<td><strong>' + escapeHtml(m.itemCode) + '</strong></td>' +
+          '<td>' + escapeHtml(m.itemName || '-') + ' / ' + escapeHtml(m.vat || '-') + '</td>' +
+          '<td><span class="pill">' + escapeHtml(m.currentStatus) + '</span></td>' +
+          '<td>' + escapeHtml(obs.temperature || '-') + '</td>' +
+          '<td>' + escapeHtml(obs.smell || '-') + '</td>' +
+          '<td>' + escapeHtml(obs.fiber || '-') + '</td>' +
+          '<td>' + escapeHtml(obs.changedWater || '-') + '</td>' +
+          '<td>' + escapeHtml(obs.abnormal || '-') + '</td>' +
+          '<td><span class="pill ' + (m.abnormal ? 'warn' : m.willBeReady ? 'ok' : '') + '">' + escapeHtml(m.newStatus) + '</span></td>' +
           '</tr>';
       }).join('');
 
@@ -315,10 +326,15 @@ PF-003,24.8,霉味,结块,否,是"></textarea>
         document.getElementById('unmatchedCount').textContent = preview.unmatchedCount;
         const unmatchedTbody = document.querySelector('#unmatchedTable tbody');
         unmatchedTbody.innerHTML = preview.unmatched.map(u => {
+          const hasCorrection = u.corrections && u.corrections.length > 0;
+          const correctionBadge = hasCorrection
+            ? '<span class="correction-badge" title="' + escapeHtml(u.corrections.map(c => c.label + ': ' + c.original + ' → ' + c.corrected).join('; ')) + '">🔧 ' + u.corrections.length + '</span>'
+            : '<span class="correction-badge none">-</span>';
           return '<tr>' +
             '<td>' + (u.row._rowIndex || '-') + '</td>' +
-            '<td class="raw-cell">' + (u.row._raw || '') + '</td>' +
-            '<td class="warn">' + u.reason + '</td>' +
+            '<td>' + correctionBadge + '</td>' +
+            '<td class="raw-cell">' + escapeHtml(u.row._raw || '') + '</td>' +
+            '<td class="warn">' + escapeHtml(u.reason) + '</td>' +
             '</tr>';
         }).join('');
       } else {
@@ -332,10 +348,10 @@ PF-003,24.8,霉味,结块,否,是"></textarea>
         const abnormalTbody = document.querySelector('#abnormalTable tbody');
         abnormalTbody.innerHTML = preview.abnormalWarnings.map(a => {
           return '<tr>' +
-            '<td><strong>' + a.itemCode + '</strong></td>' +
-            '<td>' + (a.itemName || '-') + ' / ' + (a.vat || '-') + '</td>' +
-            '<td><span class="pill">' + a.currentStatus + '</span></td>' +
-            '<td class="warn">' + (a.observation.abnormal || '异常') + '</td>' +
+            '<td><strong>' + escapeHtml(a.itemCode) + '</strong></td>' +
+            '<td>' + escapeHtml(a.itemName || '-') + ' / ' + escapeHtml(a.vat || '-') + '</td>' +
+            '<td><span class="pill">' + escapeHtml(a.currentStatus) + '</span></td>' +
+            '<td class="warn">' + escapeHtml(a.observation.abnormal || '异常') + '</td>' +
             '<td><span class="pill warn">异常观察</span></td>' +
             '</tr>';
         }).join('');
@@ -381,20 +397,20 @@ PF-003,24.8,霉味,结块,否,是"></textarea>
         '<div class="result-stat warn"><span>失败</span><strong>' + failedCount + ' 条</strong></div>' +
         '</div>';
 
-      if (successCount > 0) {
+      if (successCount > 0 || failedCount > 0) {
         document.getElementById('resultTableWrap').style.display = 'block';
         const tbody = document.querySelector('#resultTable tbody');
-        tbody.innerHTML = result.success.map(s => {
+        tbody.innerHTML = (result.success || []).map(s => {
           return '<tr>' +
-            '<td><strong>' + s.itemCode + '</strong></td>' +
+            '<td><strong>' + escapeHtml(s.itemCode) + '</strong></td>' +
             '<td><span class="pill ok">成功</span></td>' +
-            '<td>状态更新为' + s.newStatus + '，已发酵 ' + s.newDays + ' 天</td>' +
+            '<td>状态更新为' + escapeHtml(s.newStatus) + '，已发酵 ' + s.newDays + ' 天</td>' +
             '</tr>';
         }).join('') + (result.failed || []).map(f => {
           return '<tr>' +
-            '<td><strong>' + (f.match?.itemCode || '未知') + '</strong></td>' +
+            '<td><strong>' + escapeHtml(f.match?.itemCode || '未知') + '</strong></td>' +
             '<td><span class="pill warn">失败</span></td>' +
-            '<td class="warn">' + f.reason + '</td>' +
+            '<td class="warn">' + escapeHtml(f.reason) + '</td>' +
             '</tr>';
         }).join('');
       }
