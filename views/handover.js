@@ -297,9 +297,9 @@ export function handoverPage() {
       handovers = data.handovers || [];
       batches = data.batches || [];
       owners = data.owners || [];
+      applyUrlPrefill();
       renderBatchSelect();
       renderFilterOptions();
-      applyUrlPrefill();
       applyUrlFilters();
     }
 

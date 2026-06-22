@@ -346,7 +346,28 @@ export function mainPage() {
       loadFilters();
       syncFiltersToDom();
       render();
+      applyUrlHash();
     }
+    function applyUrlHash() {
+      const hash = window.location.hash;
+      const codeMatch = window.location.search.match(/[?&]code=([^&]+)/);
+      if (codeMatch) {
+        const code = decodeURIComponent(codeMatch[1]);
+        searchInput.value = code;
+        filterState.search = code;
+        saveFilters();
+        render();
+      }
+      if (!hash) return;
+      const match = hash.match(/^#openDrawer=([^&]+)/);
+      if (match) {
+        const batchCode = decodeURIComponent(match[1]);
+        if (items.some(i => i.code === batchCode || i.id === batchCode)) {
+          setTimeout(() => { openHandoverDrawer(batchCode); }, 100);
+        }
+      }
+    }
+    window.addEventListener('hashchange', applyUrlHash);
     createForm.onsubmit = async event => {
       event.preventDefault();
       const formData = Object.fromEntries(new FormData(createForm).entries());
