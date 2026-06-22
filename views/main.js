@@ -19,7 +19,15 @@ export function mainPage() {
     </section>
     <section>
       <div class="stats" id="stats"></div>
-      <div class="toolbar"><select id="statusFilter"><option value="">全部状态</option>${stages.map((s) => "<option>" + s + "</option>").join("")}</select><input id="search" placeholder="搜索编号或关键词"></div>
+      <div class="toolbar">
+        <select id="statusFilter"><option value="">全部状态</option>${stages.map((s) => "<option>" + s + "</option>").join("")}</select>
+        <select id="ownerFilter"><option value="">全部负责人</option></select>
+        <select id="vatFilter"><option value="">全部浸泡缸</option></select>
+        <select id="handoverFilter"><option value="">全部交接</option><option value="yes">有交接提醒</option><option value="no">无交接提醒</option></select>
+        <select id="reportFilter"><option value="">全部报告</option><option value="yes">可生成评估报告</option><option value="no">不可生成评估报告</option></select>
+        <input id="search" placeholder="搜索编号或关键词">
+        <button type="button" id="resetFilters" class="secondary">重置筛选</button>
+      </div>
       <div class="panel"><h2>每天记录温度、气味、纤维状态和换水情况，系统统计发酵进度与异常次数。</h2><div class="grid" id="cards"></div></div>
     </section>
   </main>
@@ -27,13 +35,29 @@ export function mainPage() {
     const fields = ${JSON.stringify(fields)};
     const stages = ${JSON.stringify(stages)};
     const extraFields = ${JSON.stringify(extraFields)};
+    const FILTER_STORAGE_KEY = 'mainPageFilters';
     const createForm = document.querySelector('#createForm');
     const actionForm = document.querySelector('#actionForm');
     const cards = document.querySelector('#cards');
     const statsEl = document.querySelector('#stats');
     const itemSelect = document.querySelector('#itemSelect');
+    const statusFilter = document.querySelector('#statusFilter');
+    const ownerFilter = document.querySelector('#ownerFilter');
+    const vatFilter = document.querySelector('#vatFilter');
+    const handoverFilter = document.querySelector('#handoverFilter');
+    const reportFilter = document.querySelector('#reportFilter');
+    const searchInput = document.querySelector('#search');
+    const resetBtn = document.querySelector('#resetFilters');
     let items = [];
     let vats = [];
+    let filterState = {
+      status: '',
+      owner: '',
+      vat: '',
+      handover: '',
+      report: '',
+      search: ''
+    };
     async function api(path, options) {
       const res = await fetch(path, options && options.body ? { ...options, headers:{ 'Content-Type':'application/json' } } : options);
       const data = await res.json();
@@ -51,13 +75,67 @@ export function mainPage() {
       document.querySelector('#fields').innerHTML = fieldsHtml;
       document.querySelector('#extraFields').innerHTML = extraFields.map(([key,label]) => '<label>'+label+'</label><input name="'+key+'">').join('');
     }
+    function saveFilters() {
+      try { localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filterState)); } catch (e) {}
+    }
+    function loadFilters() {
+      try {
+        const saved = localStorage.getItem(FILTER_STORAGE_KEY);
+        if (saved) {
+          const filters = JSON.parse(saved);
+          filterState = { ...filterState, ...filters };
+        }
+      } catch (e) {}
+    }
+    function syncFiltersToDom() {
+      statusFilter.value = filterState.status;
+      ownerFilter.value = filterState.owner;
+      vatFilter.value = filterState.vat;
+      handoverFilter.value = filterState.handover;
+      reportFilter.value = filterState.report;
+      searchInput.value = filterState.search;
+    }
+    function resetFilters() {
+      filterState = { status: '', owner: '', vat: '', handover: '', report: '', search: '' };
+      saveFilters();
+      syncFiltersToDom();
+      render();
+    }
+    function populateFilterOptions() {
+      const owners = [...new Set(items.map(i => i.owner).filter(Boolean))];
+      ownerFilter.innerHTML = '<option value="">全部负责人</option>' +
+        owners.map(o => '<option value="'+o+'">'+o+'</option>').join('');
+      const vatNames = [...new Set(items.map(i => i.vat).filter(Boolean))];
+      vatFilter.innerHTML = '<option value="">全部浸泡缸</option>' +
+        vatNames.map(v => '<option value="'+v+'">'+v+'</option>').join('');
+      if (filterState.owner && owners.includes(filterState.owner)) {
+        ownerFilter.value = filterState.owner;
+      }
+      if (filterState.vat && vatNames.includes(filterState.vat)) {
+        vatFilter.value = filterState.vat;
+      }
+    }
+    function applyFilters() {
+      const { status, owner, vat, handover, report, search } = filterState;
+      const q = search.trim();
+      return items.filter(item => {
+        if (status && item.status !== status) return false;
+        if (owner && item.owner !== owner) return false;
+        if (vat && item.vat !== vat) return false;
+        if (handover === 'yes' && !item.latestHandover) return false;
+        if (handover === 'no' && item.latestHandover) return false;
+        if (report === 'yes' && item.status !== '可抄纸') return false;
+        if (report === 'no' && item.status === '可抄纸') return false;
+        if (q && !JSON.stringify(item).includes(q)) return false;
+        return true;
+      });
+    }
     function render() {
       itemSelect.innerHTML = items.map(item => '<option value="'+(item.id || item.code)+'">'+(item.code || item.id)+' · '+(item.name || item.shipType || item.source || item.plateSize || '')+'</option>').join('');
       const stats = Object.fromEntries(stages.map(s => [s, items.filter(i => i.status === s).length]));
       statsEl.innerHTML = Object.entries(stats).map(([k,v]) => '<div class="stat"><span>'+k+'</span><strong>'+v+'</strong></div>').join('');
-      const status = document.querySelector('#statusFilter').value;
-      const q = document.querySelector('#search').value.trim();
-      const visible = items.filter(item => (!status || item.status === status) && (!q || JSON.stringify(item).includes(q)));
+      populateFilterOptions();
+      const visible = applyFilters();
       cards.innerHTML = visible.map(item => cardHtml(item)).join('');
       document.querySelectorAll('[data-status]').forEach(sel => sel.onchange = async () => { await api('/api/items/'+sel.dataset.status, { method:'PATCH', body: JSON.stringify({ status: sel.value }) }); await load(); });
       document.querySelectorAll('[data-note]').forEach(btn => btn.onclick = async () => { const id = btn.dataset.note; const note = prompt('记录备注'); if (note) { await api('/api/items/'+id+'/logs', { method:'POST', body: JSON.stringify({ step:'备注', note }) }); await load(); } });
@@ -99,6 +177,9 @@ export function mainPage() {
       items = await api('/api/items');
       vats = await api('/api/vats');
       renderForms();
+      populateFilterOptions();
+      loadFilters();
+      syncFiltersToDom();
       render();
     }
     createForm.onsubmit = async event => {
@@ -114,7 +195,14 @@ export function mainPage() {
       await load();
     };
     actionForm.onsubmit = async event => { event.preventDefault(); await api('/api/items/'+itemSelect.value+'/action', { method:'POST', body: JSON.stringify(Object.fromEntries(new FormData(actionForm).entries())) }); actionForm.reset(); await load(); };
-    document.querySelector('#statusFilter').onchange = render; document.querySelector('#search').oninput = render; document.querySelector('#reload').onclick = load;
+    statusFilter.onchange = () => { filterState.status = statusFilter.value; saveFilters(); render(); };
+    ownerFilter.onchange = () => { filterState.owner = ownerFilter.value; saveFilters(); render(); };
+    vatFilter.onchange = () => { filterState.vat = vatFilter.value; saveFilters(); render(); };
+    handoverFilter.onchange = () => { filterState.handover = handoverFilter.value; saveFilters(); render(); };
+    reportFilter.onchange = () => { filterState.report = reportFilter.value; saveFilters(); render(); };
+    searchInput.oninput = () => { filterState.search = searchInput.value; saveFilters(); render(); };
+    resetBtn.onclick = resetFilters;
+    document.querySelector('#reload').onclick = load;
     load();
   </script>
 </body>

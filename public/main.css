@@ -18,10 +18,25 @@ main {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
   margin-bottom: 14px;
+  padding: 12px;
+  background: var(--obs-bg);
+  border: 1px solid var(--obs-border);
+  border-radius: 6px;
 }
 
-.toolbar select, .toolbar input { width: auto; min-width: 160px; }
+.toolbar select, .toolbar input {
+  flex: 1;
+  min-width: 130px;
+  max-width: 200px;
+  width: auto;
+}
+
+.toolbar button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 
 .grid {
   display: grid;
@@ -108,4 +123,6 @@ main {
 
 @media (max-width: 900px) {
   main { grid-template-columns: 1fr; padding: 16px; }
+  .toolbar select, .toolbar input { max-width: none; }
+  .toolbar { padding: 10px; }
 }
