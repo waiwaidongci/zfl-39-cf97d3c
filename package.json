@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "migrate-events": "node scripts/migrate-events.js",
+    "migrate-rules": "node scripts/migrate-rules.js",
+    "test": "node scripts/regression-test.js"
   }
 }

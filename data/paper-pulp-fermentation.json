@@ -398,5 +398,755 @@
       "note": "正常交接",
       "createdAt": "2026-06-21T13:50:47.499Z"
     }
+  ],
+  "events": [
+    {
+      "id": "EVT-1782054404318-ptl7pp",
+      "type": "batch.created",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-13T00:00:00.000Z",
+      "data": {
+        "source": "桑皮",
+        "vat": "一号缸",
+        "vatId": "V-001",
+        "owner": "林素",
+        "expectedDays": 7,
+        "startDate": "2026-06-13",
+        "status": "入缸",
+        "step": "建档",
+        "note": "创建纸浆批次，入一号缸"
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "item.initial_state"
+    },
+    {
+      "id": "EVT-1782054404318-83qab4",
+      "type": "batch.created",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-15T00:00:00.000Z",
+      "data": {
+        "source": "构树皮",
+        "vat": "三号缸",
+        "vatId": "V-003",
+        "owner": "林素",
+        "expectedDays": 7,
+        "startDate": "2026-06-15",
+        "status": "入缸",
+        "step": "建档",
+        "note": "创建纸浆批次，入三号缸"
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "item.initial_state"
+    },
+    {
+      "id": "EVT-1782054404318-ie7qk0",
+      "type": "observation.recorded",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-15T08:30:00.000Z",
+      "data": {
+        "step": "观察",
+        "note": "温度23.5，正常酸味，较松散",
+        "originalIndex": 1
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[1]"
+    },
+    {
+      "id": "EVT-1782054404318-vcond5",
+      "type": "observation.recorded",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-15T08:30:00.000Z",
+      "data": {
+        "temperature": "23.5",
+        "smell": "正常酸味",
+        "fiber": "较松散",
+        "changedWater": "未换水",
+        "abnormalNote": "",
+        "originalIndex": 0
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度23.5，正常酸味，较松散，换水:未换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[0]"
+    },
+    {
+      "id": "EVT-1782054404318-fu2ox7",
+      "type": "observation.recorded",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-17T09:10:00.000Z",
+      "data": {
+        "step": "观察",
+        "note": "温度24.8，正常酸味，松散，换水:已换水",
+        "originalIndex": 2
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[2]"
+    },
+    {
+      "id": "EVT-1782054404318-3bs02y",
+      "type": "observation.recorded",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-17T09:10:00.000Z",
+      "data": {
+        "temperature": "24.8",
+        "smell": "正常酸味",
+        "fiber": "松散",
+        "changedWater": "已换水",
+        "abnormalNote": "",
+        "originalIndex": 1
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度24.8，正常酸味，松散，换水:已换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[1]"
+    },
+    {
+      "id": "EVT-1782054404318-i9uxwh",
+      "type": "observation.recorded",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-19T08:45:00.000Z",
+      "data": {
+        "step": "观察",
+        "note": "温度25.2，微酸，松散",
+        "originalIndex": 3
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[3]"
+    },
+    {
+      "id": "EVT-1782054404318-gsef0n",
+      "type": "observation.recorded",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-19T08:45:00.000Z",
+      "data": {
+        "temperature": "25.2",
+        "smell": "微酸",
+        "fiber": "松散",
+        "changedWater": "未换水",
+        "abnormalNote": "",
+        "originalIndex": 2
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度25.2，微酸，松散，换水:未换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[2]"
+    },
+    {
+      "id": "EVT-1782054404318-yg1bdr",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T03:50:29.658Z",
+      "data": {
+        "step": "观察",
+        "note": "温度25.1，微酸，松散",
+        "originalIndex": 1
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[1]"
+    },
+    {
+      "id": "EVT-1782054404318-tjs4n8",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T03:50:29.658Z",
+      "data": {
+        "temperature": "25.1",
+        "smell": "微酸",
+        "fiber": "松散",
+        "changedWater": "是",
+        "abnormalNote": "",
+        "originalIndex": 0
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度25.1，微酸，松散，换水:是"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[0]"
+    },
+    {
+      "id": "EVT-1782054404318-bhqxpo",
+      "type": "observation.recorded",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-21T09:00:00.000Z",
+      "data": {
+        "step": "观察",
+        "note": "温度25.8，正常酸味，纤维松散均匀，已达到可抄纸标准",
+        "originalIndex": 4
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[4]"
+    },
+    {
+      "id": "EVT-1782054404318-m8wahr",
+      "type": "observation.recorded",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-21T09:00:00.000Z",
+      "data": {
+        "temperature": "25.8",
+        "smell": "正常酸味",
+        "fiber": "松散",
+        "changedWater": "已换水",
+        "abnormalNote": "",
+        "originalIndex": 3
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度25.8，正常酸味，松散，换水:已换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[3]"
+    },
+    {
+      "id": "EVT-1782054404318-l5issg",
+      "type": "inspection.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:22:56.000Z",
+      "data": {
+        "step": "现场巡检",
+        "note": "温度26.5，正常酸味，较松散，换水:未换水",
+        "originalIndex": 2
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[2]"
+    },
+    {
+      "id": "EVT-1782054404318-cletdt",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:22:56.000Z",
+      "data": {
+        "temperature": "26.5",
+        "smell": "正常酸味",
+        "fiber": "较松散",
+        "changedWater": "未换水",
+        "abnormalNote": "",
+        "originalIndex": 1
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度26.5，正常酸味，较松散，换水:未换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[1]"
+    },
+    {
+      "id": "EVT-1782054404318-y3kq3f",
+      "type": "inspection.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:22:56.781Z",
+      "data": {
+        "step": "现场巡检",
+        "note": "温度26.5，正常酸味，较松散，换水:未换水",
+        "originalIndex": 3
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[3]"
+    },
+    {
+      "id": "EVT-1782054404318-6937y8",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:22:56.781Z",
+      "data": {
+        "temperature": "26.5",
+        "smell": "正常酸味",
+        "fiber": "较松散",
+        "changedWater": "未换水",
+        "abnormalNote": "",
+        "originalIndex": 2
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度26.5，正常酸味，较松散，换水:未换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[2]"
+    },
+    {
+      "id": "EVT-1782054404318-utfcfg",
+      "type": "inspection.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:26:39.662Z",
+      "data": {
+        "step": "现场巡检",
+        "note": "温度24.8，正常酸味，松散，换水:未换水",
+        "originalIndex": 4
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[4]"
+    },
+    {
+      "id": "EVT-1782054404318-inb8v5",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:26:39.662Z",
+      "data": {
+        "temperature": "24.8",
+        "smell": "正常酸味",
+        "fiber": "松散",
+        "changedWater": "未换水",
+        "abnormalNote": "",
+        "originalIndex": 3
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度24.8，正常酸味，松散，换水:未换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[3]"
+    },
+    {
+      "id": "EVT-1782054404318-s04yt6",
+      "type": "inspection.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:44:02.000Z",
+      "data": {
+        "step": "现场巡检",
+        "note": "温度25.5，正常酸味，松散，换水:未换水",
+        "originalIndex": 5
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[5]"
+    },
+    {
+      "id": "EVT-1782054404318-5vpjd1",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:44:02.000Z",
+      "data": {
+        "temperature": "25.5",
+        "smell": "正常酸味",
+        "fiber": "松散",
+        "changedWater": "未换水",
+        "abnormalNote": "",
+        "originalIndex": 4
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度25.5，正常酸味，松散，换水:未换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[4]"
+    },
+    {
+      "id": "EVT-1782054404318-3vktfj",
+      "type": "inspection.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:44:39.055Z",
+      "data": {
+        "step": "现场巡检",
+        "note": "温度26.0，正常酸味，较松散，换水:已换水",
+        "originalIndex": 6
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[6]"
+    },
+    {
+      "id": "EVT-1782054404319-liwl53",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:44:39.055Z",
+      "data": {
+        "temperature": "26.0",
+        "smell": "正常酸味",
+        "fiber": "较松散",
+        "changedWater": "已换水",
+        "abnormalNote": "",
+        "originalIndex": 5
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度26.0，正常酸味，较松散，换水:已换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[5]"
+    },
+    {
+      "id": "EVT-1782054404318-jpamuy",
+      "type": "inspection.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:45:39.658Z",
+      "data": {
+        "step": "现场巡检",
+        "note": "温度25.5，正常酸味，松散，换水:未换水",
+        "originalIndex": 7
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[7]"
+    },
+    {
+      "id": "EVT-1782054404319-2zzf67",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:45:39.658Z",
+      "data": {
+        "temperature": "25.5",
+        "smell": "正常酸味",
+        "fiber": "松散",
+        "changedWater": "未换水",
+        "abnormalNote": "",
+        "originalIndex": 6
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度25.5，正常酸味，松散，换水:未换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[6]"
+    },
+    {
+      "id": "EVT-1782054404318-kdulam",
+      "type": "inspection.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:46:16.429Z",
+      "data": {
+        "step": "现场巡检",
+        "note": "温度24.0，正常酸味，较松散，换水:已换水",
+        "originalIndex": 8
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[8]"
+    },
+    {
+      "id": "EVT-1782054404318-6qal0a",
+      "type": "inspection.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:46:16.429Z",
+      "data": {
+        "step": "现场巡检",
+        "note": "温度25.0，浓烈酸味，一般，换水:未换水，异常:发现霉斑",
+        "originalIndex": 9
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": true,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[9]"
+    },
+    {
+      "id": "EVT-1782054404319-z8x3ia",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:46:16.429Z",
+      "data": {
+        "temperature": "24.0",
+        "smell": "正常酸味",
+        "fiber": "较松散",
+        "changedWater": "已换水",
+        "abnormalNote": "",
+        "originalIndex": 7
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": "温度24.0，正常酸味，较松散，换水:已换水"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[7]"
+    },
+    {
+      "id": "EVT-1782054404319-cej998",
+      "type": "observation.recorded",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T09:46:16.429Z",
+      "data": {
+        "temperature": "25.0",
+        "smell": "浓烈酸味",
+        "fiber": "一般",
+        "changedWater": "未换水",
+        "abnormalNote": "发现霉斑",
+        "originalIndex": 8
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": true,
+        "note": "温度25.0，浓烈酸味，一般，换水:未换水，异常:发现霉斑"
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "observations[8]"
+    },
+    {
+      "id": "EVT-1782054404318-9nf3ck",
+      "type": "handover.created",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-21T13:55:51.841Z",
+      "data": {
+        "step": "交接",
+        "note": "交接给李工（交出人：王师傅）",
+        "originalIndex": 5
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[5]"
+    },
+    {
+      "id": "EVT-1782054404318-7nv5v9",
+      "type": "handover.created",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-21T14:16:49.217Z",
+      "data": {
+        "step": "交接",
+        "note": "交接给林素（交出人：李工）",
+        "originalIndex": 6
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[6]"
+    },
+    {
+      "id": "EVT-1782054404318-ksu819",
+      "type": "handover.created",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T14:16:49.217Z",
+      "data": {
+        "step": "交接",
+        "note": "交接给林素（交出人：李工）",
+        "originalIndex": 10
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "logs[10]"
+    },
+    {
+      "id": "EVT-1782054404318-rh7mzq",
+      "type": "status.changed",
+      "batchId": "PF-002",
+      "batchCode": "PF-002",
+      "timestamp": "2026-06-21T15:06:44.318Z",
+      "data": {
+        "oldStatus": "入缸",
+        "newStatus": "可抄纸",
+        "newDays": 8,
+        "step": "状态",
+        "note": "迁移时状态同步：可抄纸"
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": false,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "item.status_reconciliation"
+    },
+    {
+      "id": "EVT-1782054404319-a7zx3g",
+      "type": "status.changed",
+      "batchId": "PF-001",
+      "batchCode": "PF-001",
+      "timestamp": "2026-06-21T15:06:44.319Z",
+      "data": {
+        "oldStatus": "入缸",
+        "newStatus": "异常观察",
+        "newDays": 11,
+        "step": "状态",
+        "note": "迁移时状态同步：异常观察"
+      },
+      "metadata": {
+        "source": "migration",
+        "operator": null,
+        "abnormal": true,
+        "note": ""
+      },
+      "version": 1,
+      "_migrated": true,
+      "_migratedFrom": "item.status_reconciliation"
+    }
   ]
 }

@@ -9,6 +9,9 @@ import {
   getExperimentWithAnalysis, buildReadinessReport, listReadyBatches,
   listHandovers, getHandoverById, createHandover, getHandoversByBatch,
   getLatestHandoverByBatch, getHandoverSummary,
+  EVENT_TYPES, EVENT_TYPE_LABELS, createEvent, appendEvent, appendEvents,
+  listEvents, getEventById, getEventsByBatch, rebuildBatchState,
+  getEventStats, runEventMigration, verifyMigration,
 } from "../lib/db.js";
 import { buildAllTimeline, uniqueValues } from "../lib/timeline.js";
 
@@ -32,6 +35,24 @@ export async function handleApi(req, res, url, method) {
       logs: [{ at: new Date().toISOString(), step: "建档", note: "创建纸浆批次" }],
     };
     db.items.unshift(item);
+    const event = createEvent(
+      EVENT_TYPES.BATCH_CREATED,
+      item.id,
+      item.code,
+      {
+        source: item.source || "",
+        vat: item.vat || "",
+        vatId: item.vatId || "",
+        owner: item.owner || "",
+        status: item.status || "入缸",
+        expectedDays: item.expectedDays || 7,
+        startDate: item.startDate || "",
+        step: "建档",
+        note: "创建纸浆批次",
+      },
+      { source: "api", operator: input.operator || null }
+    );
+    appendEvent(db, event);
     await saveDb(db);
     return send(res, 201, item);
   }
@@ -40,9 +61,24 @@ export async function handleApi(req, res, url, method) {
   if (patch && method === "PATCH") {
     const item = db.items.find((x) => x.id === patch[1] || x.code === patch[1]);
     if (!item) return send(res, 404, { error: "item_not_found" });
-    Object.assign(item, await body(req));
+    const oldStatus = item.status;
+    const input = await body(req);
+    Object.assign(item, input);
     item.logs ||= [];
     item.logs.push({ at: new Date().toISOString(), step: "状态", note: "更新为" + item.status });
+    const event = createEvent(
+      EVENT_TYPES.STATUS_CHANGED,
+      item.id || item.code,
+      item.code,
+      {
+        oldStatus,
+        newStatus: item.status,
+        step: "状态",
+        note: "更新为" + item.status,
+      },
+      { source: "api", operator: input.operator || null }
+    );
+    appendEvent(db, event);
     await saveDb(db);
     return send(res, 200, item);
   }
@@ -54,6 +90,17 @@ export async function handleApi(req, res, url, method) {
     const input = await body(req);
     item.logs ||= [];
     item.logs.push({ at: new Date().toISOString(), step: input.step || "记录", note: input.note || "" });
+    const event = createEvent(
+      EVENT_TYPES.NOTE_ADDED,
+      item.id || item.code,
+      item.code,
+      {
+        step: input.step || "记录",
+        note: input.note || "",
+      },
+      { source: "api", operator: input.operator || null }
+    );
+    appendEvent(db, event);
     await saveDb(db);
     return send(res, 201, item);
   }
@@ -74,12 +121,61 @@ export async function handleApi(req, res, url, method) {
     item.status = evaluation.nextStatus;
     const rule = evaluation.rule;
     const reasonNote = evaluation.reasons.length > 0 ? "（判定依据：" + evaluation.reasons.join("；") + "，规则：" + rule.name + "）" : "";
+    const noteText = "温度" + (input.temperature || "") + "，" + (input.smell || "") + "，" + (input.fiber || "") + reasonNote;
     item.logs.push({
       at: new Date().toISOString(),
       step: "观察",
-      note: "温度" + (input.temperature || "") + "，" + (input.smell || "") + "，" + (input.fiber || "") + reasonNote,
+      note: noteText,
       abnormal: evaluation.isAbnormal,
     });
+
+    const obsEvent = createEvent(
+      EVENT_TYPES.OBSERVATION_RECORDED,
+      item.id || item.code,
+      item.code,
+      {
+        temperature: input.temperature || "",
+        smell: input.smell || "",
+        fiber: input.fiber || "",
+        changedWater: input.changedWater || "",
+        abnormalNote: input.abnormalNote || "",
+        newStatus: evaluation.nextStatus,
+        newDays: evaluation.newDays,
+        step: "观察",
+        note: noteText,
+      },
+      {
+        source: "api",
+        operator: input.operator || null,
+        abnormal: evaluation.isAbnormal,
+      }
+    );
+    appendEvent(db, obsEvent);
+
+    if (evaluation.reasons.length > 0) {
+      const ruleEvent = createEvent(
+        EVENT_TYPES.RULE_EVALUATED,
+        item.id || item.code,
+        item.code,
+          {
+            ruleId: rule.id,
+            ruleName: rule.name,
+            nextStatus: evaluation.nextStatus,
+            newDays: evaluation.newDays,
+            reasons: evaluation.reasons,
+            keywordMatched: evaluation.keywordMatched,
+            triggered: evaluation.triggered,
+            note: "规则判定：" + rule.name + " → " + evaluation.nextStatus + "（" + evaluation.reasons.join("；") + "）",
+          },
+          {
+            source: "api",
+            operator: input.operator || null,
+            abnormal: evaluation.isAbnormal,
+          }
+      );
+      appendEvent(db, ruleEvent);
+    }
+
     await saveDb(db);
     return send(res, 201, { ...item, evaluation });
   }
@@ -417,6 +513,71 @@ export async function handleApi(req, res, url, method) {
   if (batchLastHandoverMatch && method === "GET") {
     const handover = getLatestHandoverByBatch(db, batchLastHandoverMatch[1]);
     return send(res, 200, { handover: handover ? getHandoverSummary(handover) : null });
+  }
+
+  if (method === "GET" && url.pathname === "/api/events/stats") {
+    const stats = getEventStats(db);
+    return send(res, 200, stats);
+  }
+
+  if (method === "GET" && url.pathname === "/api/events") {
+    const filters = {
+      batchId: url.searchParams.get("batchId") || url.searchParams.get("batchCode") || "",
+      batchCode: url.searchParams.get("batchCode") || url.searchParams.get("batchId") || "",
+      type: url.searchParams.get("type") || "",
+      abnormal: url.searchParams.get("abnormal") || null,
+      startTime: url.searchParams.get("startTime") || url.searchParams.get("start") || "",
+      endTime: url.searchParams.get("endTime") || url.searchParams.get("end") || "",
+      source: url.searchParams.get("source") || "",
+      operator: url.searchParams.get("operator") || "",
+      sort: url.searchParams.get("sort") || "desc",
+      limit: url.searchParams.get("limit") || 0,
+    };
+    const events = listEvents(db, filters);
+    const allBatches = [...new Set(
+      (db.items || []).map((i) => i.code || i.id).filter(Boolean),
+    )];
+    const typeOptions = Object.entries(EVENT_TYPE_LABELS).map(([type, label]) => ({ type, label }));
+    return send(res, 200, {
+      events,
+      total: events.length,
+      batches: allBatches,
+      typeOptions,
+    });
+  }
+
+  const eventMatch = url.pathname.match(/^\/api\/events\/([^/]+)$/);
+  if (eventMatch && method === "GET") {
+    const event = getEventById(db, eventMatch[1]);
+    if (!event) return send(res, 404, { error: "event_not_found" });
+    return send(res, 200, event);
+  }
+
+  const eventRebuildMatch = url.pathname.match(/^\/api\/events\/batch\/([^/]+)$/);
+  if (eventRebuildMatch && method === "GET") {
+    const batchId = decodeURIComponent(eventRebuildMatch[1]);
+    const events = getEventsByBatch(db, batchId);
+    const rebuilt = rebuildBatchState(db, batchId);
+    return send(res, 200, { events, rebuiltState: rebuilt });
+  }
+
+  const eventRebuildStateMatch = url.pathname.match(/^\/api\/events\/rebuild\/([^/]+)$/);
+  if (eventRebuildStateMatch && method === "GET") {
+    const batchId = decodeURIComponent(eventRebuildStateMatch[1]);
+    const rebuilt = rebuildBatchState(db, batchId);
+    if (!rebuilt) return send(res, 404, { error: "batch_not_found", message: "找不到该批次或没有事件数据" });
+    return send(res, 200, rebuilt);
+  }
+
+  if (method === "POST" && url.pathname === "/api/events/migrate") {
+    const result = runEventMigration(db);
+    await saveDb(db);
+    return send(res, 200, result);
+  }
+
+  if (method === "POST" && url.pathname === "/api/events/verify") {
+    const result = verifyMigration(db);
+    return send(res, 200, result);
   }
 
   return null;
