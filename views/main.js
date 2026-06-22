@@ -23,7 +23,7 @@ export function mainPage() {
         <select id="statusFilter"><option value="">全部状态</option>${stages.map((s) => "<option>" + s + "</option>").join("")}</select>
         <select id="ownerFilter"><option value="">全部负责人</option></select>
         <select id="vatFilter"><option value="">全部浸泡缸</option></select>
-        <select id="handoverFilter"><option value="">全部交接</option><option value="yes">待交接（需要提醒）</option><option value="no">已交接（无需提醒）</option></select>
+        <select id="handoverFilter"><option value="">全部交接</option><option value="yes">有交接提醒</option><option value="no">无交接提醒</option></select>
         <select id="reportFilter"><option value="">全部报告</option><option value="yes">可生成评估报告</option><option value="no">不可生成评估报告</option></select>
         <input id="search" placeholder="搜索编号或关键词">
         <button type="button" id="resetFilters" class="secondary">重置筛选</button>
@@ -122,8 +122,9 @@ export function mainPage() {
         if (status && item.status !== status) return false;
         if (owner && item.owner !== owner) return false;
         if (vat && item.vat !== vat) return false;
-        if (handover === 'yes' && item.latestHandover) return false;
-        if (handover === 'no' && !item.latestHandover) return false;
+        const hasHandoverReminder = !!String(item.latestHandover?.nextWaterChangeReminder || '').trim();
+        if (handover === 'yes' && !hasHandoverReminder) return false;
+        if (handover === 'no' && hasHandoverReminder) return false;
         if (report === 'yes' && item.status !== '可抄纸') return false;
         if (report === 'no' && item.status === '可抄纸') return false;
         if (q && !JSON.stringify(item).includes(q)) return false;
