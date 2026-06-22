@@ -232,82 +232,6 @@
       "version": 1,
       "_migrated": true,
       "_migratedFrom": "item.initial_state"
-    },
-    {
-      "id": "EVT-1782102920680-x7uieu",
-      "type": "status.changed",
-      "batchId": "PF-1782102024266",
-      "batchCode": "PF-002",
-      "timestamp": "2026-06-22T04:35:20.680Z",
-      "data": {
-        "oldStatus": "入缸",
-        "newStatus": "可抄纸",
-        "step": "状态",
-        "note": "更新为可抄纸"
-      },
-      "metadata": {
-        "source": "api",
-        "operator": null,
-        "abnormal": false,
-        "note": ""
-      },
-      "version": 1,
-      "_migrated": false,
-      "_migratedFrom": null
-    },
-    {
-      "id": "EVT-1782103166606-bxpkv1",
-      "type": "batch.created",
-      "batchId": "PF-1782103166606",
-      "batchCode": "TEST-001",
-      "timestamp": "2026-06-22T04:39:26.606Z",
-      "data": {
-        "source": "竹子",
-        "vat": "",
-        "vatId": "",
-        "owner": "李师傅",
-        "status": "入缸",
-        "expectedDays": "7",
-        "startDate": "2026-06-22",
-        "step": "建档",
-        "note": "创建纸浆批次"
-      },
-      "metadata": {
-        "source": "api",
-        "operator": null,
-        "abnormal": false,
-        "note": ""
-      },
-      "version": 1,
-      "_migrated": false,
-      "_migratedFrom": null
-    },
-    {
-      "id": "EVT-1782103166610-qht3b2",
-      "type": "batch.created",
-      "batchId": "PF-1782103166606",
-      "batchCode": "TEST-001",
-      "timestamp": "2026-06-22T04:39:26.606Z",
-      "data": {
-        "source": "竹子",
-        "vat": "",
-        "vatId": "",
-        "owner": "李师傅",
-        "expectedDays": "7",
-        "startDate": "2026-06-22",
-        "status": "入缸",
-        "step": "建档",
-        "note": "创建纸浆批次，入"
-      },
-      "metadata": {
-        "source": "migration",
-        "operator": null,
-        "abnormal": false,
-        "note": ""
-      },
-      "version": 1,
-      "_migrated": true,
-      "_migratedFrom": "item.initial_state"
     }
   ],
   "fermentationRules": [
@@ -342,24 +266,6 @@
   ],
   "items": [
     {
-      "id": "PF-1782103166606",
-      "code": "TEST-001",
-      "source": "竹子",
-      "vat": "",
-      "days": "0",
-      "expectedDays": "7",
-      "startDate": "2026-06-22",
-      "owner": "李师傅",
-      "status": "入缸",
-      "logs": [
-        {
-          "at": "2026-06-22T04:39:26.606Z",
-          "step": "建档",
-          "note": "创建纸浆批次"
-        }
-      ]
-    },
-    {
       "id": "PF-1782102024266",
       "code": "PF-002",
       "source": "桑皮",
@@ -368,17 +274,12 @@
       "expectedDays": "",
       "startDate": "",
       "owner": "王师傅",
-      "status": "可抄纸",
+      "status": "入缸",
       "logs": [
         {
           "at": "2026-06-22T04:20:24.266Z",
           "step": "建档",
           "note": "创建纸浆批次"
-        },
-        {
-          "at": "2026-06-22T04:35:20.680Z",
-          "step": "状态",
-          "note": "更新为可抄纸"
         }
       ]
     },
