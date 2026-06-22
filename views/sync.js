@@ -270,7 +270,22 @@ export function syncPage() {
         renderImportPreview(result, pkg);
         renderConflicts(currentConflicts);
 
-        document.querySelector('.sync-tabs .tab-btn[data-tab="resolve"]').click();
+        if (result.conflicts.length === 0) {
+          const previewEl = document.getElementById('importPreview');
+          const existingDirectBtn = document.getElementById('directMergeBtn');
+          if (!existingDirectBtn) {
+            const directBtnHtml = '<div class="success-card" style="margin-top: 16px;">' +
+              '<h3>✅ 无冲突，可直接合并</h3>' +
+              '<p>导入的数据包与本地数据没有检测到冲突，可以直接合并写入。</p>' +
+              '<div class="form-actions">' +
+              '<button class="btn primary" id="directMergeBtn" onclick="window.syncDirectMerge()">⚡ 直接合并写入</button>' +
+              '</div>' +
+              '</div>';
+            previewEl.innerHTML += directBtnHtml;
+          }
+        } else {
+          document.querySelector('.sync-tabs .tab-btn[data-tab="resolve"]').click();
+        }
       } catch (e) {
         document.getElementById('importPreview').innerHTML =
           '<div class="error-card"><h3>❌ 导入失败</h3><div>' + e.message + '</div></div>';
@@ -482,14 +497,20 @@ export function syncPage() {
     }
 
     function updateMergeButton() {
-      const allResolved = currentConflicts.length > 0 && currentConflicts.every(c => c.resolved);
+      const allResolved = currentConflicts.length === 0 || currentConflicts.every(c => c.resolved);
       const btn = document.getElementById('applyMergeBtn');
-      btn.disabled = !(allResolved && currentPkg);
+      if (btn) {
+        btn.disabled = !(allResolved && currentPkg);
+      }
     }
 
     async function applyMerge() {
-      if (!currentPkg || currentConflicts.length === 0) {
-        alert('请先导入同步包并解决所有冲突');
+      if (!currentPkg) {
+        alert('请先导入同步包');
+        return;
+      }
+      if (currentConflicts.length > 0 && !currentConflicts.every(c => c.resolved)) {
+        alert('请先解决所有冲突');
         return;
       }
       if (!confirm('确认将合并后的数据写入本地数据库？此操作不可撤销。')) return;
@@ -586,6 +607,10 @@ export function syncPage() {
     setupTabs();
     setupConflictFilter();
     loadWorkshopInfo();
+
+    window.syncDirectMerge = async function() {
+      await applyMerge();
+    };
   </script>
 </body>
 </html>`;

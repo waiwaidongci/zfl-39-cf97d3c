@@ -35,6 +35,18 @@ function makeDb(workshopName, workshopId) {
   return db;
 }
 
+function makeEmptyDb() {
+  return {
+    items: [],
+    events: [],
+    vats: [],
+    fermentationRules: [],
+    handovers: [],
+    experiments: [],
+    syncHistory: [],
+  };
+}
+
 function makeItem(code, overrides = {}) {
   return {
     id: code,
@@ -222,25 +234,20 @@ console.log("\n📋 7. 冲突检测 - 观察记录重复");
 test("detectConflicts 检测到观察记录重复", () => {
   const localDb = makeDb("东工坊", "WS-DONG-001");
   const localItem = makeItem("PF-001");
+  localItem.observations[0].changedWater = "否";
+  localItem.observations[0].abnormalNote = "";
   localDb.items.push(localItem);
 
   const remoteDb = makeDb("西工坊", "WS-XI-001");
   const remoteItem = makeItem("PF-001");
-  remoteItem.observations.push({
-    at: "2026-06-18T08:00:00.000Z",
-    temperature: "27",
-    smell: "正常酸味",
-    fiber: "松散",
-    changedWater: "是",
-    abnormalNote: "",
-    abnormal: false,
-  });
+  remoteItem.observations[0].changedWater = "是";
+  remoteItem.observations[0].abnormalNote = "发现少量气泡";
   remoteDb.items.push(remoteItem);
   const exportResult = createExportPackage(remoteDb);
 
   const result = detectConflicts(localDb, exportResult.package);
   const obsConflicts = result.conflicts.filter((c) => c.type === CONFLICT_TYPES.OBSERVATION_DUPLICATE);
-  assert(obsConflicts.length === 1, "检测到观察记录重复");
+  assert(obsConflicts.length === 1, "检测到观察记录重复（同时间+温度+气味+纤维，但其他内容不同）");
   assert(obsConflicts[0].duplicates.length >= 1, "至少1条重复记录");
 });
 
@@ -483,12 +490,15 @@ test("applyMerge 记录同步历史", () => {
 console.log("\n📋 17. 综合场景 - 多冲突类型同时存在");
 test("综合场景：四种主要冲突同时检测并合并", () => {
   const localDb = makeDb("东工坊", "WS-DONG-001");
-  localDb.items.push(makeItem("PF-001", {
+  const localItem = makeItem("PF-001", {
     status: "发酵中",
     owner: "林素",
     vat: "一号缸",
     vatId: "V-001",
-  }));
+  });
+  localItem.observations[0].changedWater = "否";
+  localItem.observations[0].abnormalNote = "";
+  localDb.items.push(localItem);
 
   const remoteDb = makeDb("西工坊", "WS-XI-001");
   const remoteItem = makeItem("PF-001", {
@@ -497,6 +507,8 @@ test("综合场景：四种主要冲突同时检测并合并", () => {
     vat: "三号缸",
     vatId: "V-003",
   });
+  remoteItem.observations[0].changedWater = "是";
+  remoteItem.observations[0].abnormalNote = "发现少量气泡";
   remoteItem.observations.push({
     at: "2026-06-18T08:00:00.000Z",
     temperature: "28",
@@ -546,6 +558,209 @@ test("综合场景：四种主要冲突同时检测并合并", () => {
 
   const pf002 = localDb.items.find((i) => i.code === "PF-002");
   assert(pf002, "PF-002已新增");
+});
+
+console.log("\n📋 19. 空字段误报冲突修复验证");
+test("本地负责人为空、对方有值时不应误报为冲突", () => {
+  const localDb = makeEmptyDb();
+  setWorkshopInfo(localDb, "本地工坊");
+  localDb.items.push(makeItem("PF-001", {
+    code: "PF-001",
+    id: "PF-001",
+    owner: "",
+    vat: "一号缸",
+    status: "发酵中",
+  }));
+
+  const remoteDb = makeEmptyDb();
+  setWorkshopInfo(remoteDb, "对方工坊", "WS-REMOTE-001");
+  remoteDb.items.push(makeItem("PF-001", {
+    code: "PF-001",
+    id: "PF-001",
+    owner: "李师傅",
+    vat: "一号缸",
+    status: "发酵中",
+  }));
+
+  const exportResult = createExportPackage(remoteDb);
+  const detectResult = detectConflicts(localDb, exportResult.package);
+
+  const ownerConflicts = detectResult.conflicts.filter((c) => c.type === CONFLICT_TYPES.OWNER_CHANGED);
+  assert(ownerConflicts.length === 0, "空字段不应误报为负责人冲突");
+});
+
+test("本地状态为空、对方有值时不应误报为冲突", () => {
+  const localDb = makeEmptyDb();
+  setWorkshopInfo(localDb, "本地工坊");
+  localDb.items.push(makeItem("PF-001", {
+    code: "PF-001",
+    id: "PF-001",
+    status: "",
+    owner: "张师傅",
+  }));
+
+  const remoteDb = makeEmptyDb();
+  setWorkshopInfo(remoteDb, "对方工坊", "WS-REMOTE-001");
+  remoteDb.items.push(makeItem("PF-001", {
+    code: "PF-001",
+    id: "PF-001",
+    status: "发酵中",
+    owner: "张师傅",
+  }));
+
+  const exportResult = createExportPackage(remoteDb);
+  const detectResult = detectConflicts(localDb, exportResult.package);
+
+  const statusConflicts = detectResult.conflicts.filter((c) => c.type === CONFLICT_TYPES.STATUS_CONFLICT);
+  assert(statusConflicts.length === 0, "空状态不应误报为状态冲突");
+});
+
+test("本地缸名为空、对方有值时不应误报为冲突", () => {
+  const localDb = makeEmptyDb();
+  setWorkshopInfo(localDb, "本地工坊");
+  localDb.items.push(makeItem("PF-001", {
+    code: "PF-001",
+    id: "PF-001",
+    vat: "",
+    status: "发酵中",
+  }));
+
+  const remoteDb = makeEmptyDb();
+  setWorkshopInfo(remoteDb, "对方工坊", "WS-REMOTE-001");
+  remoteDb.items.push(makeItem("PF-001", {
+    code: "PF-001",
+    id: "PF-001",
+    vat: "二号缸",
+    status: "发酵中",
+  }));
+
+  const exportResult = createExportPackage(remoteDb);
+  const detectResult = detectConflicts(localDb, exportResult.package);
+
+  const vatConflicts = detectResult.conflicts.filter((c) => c.type === CONFLICT_TYPES.VAT_NAME_MISMATCH);
+  assert(vatConflicts.length === 0, "空缸名不应误报为缸名冲突");
+});
+
+console.log("\n📋 20. 空字段自动填充验证");
+test("合并时本地空字段自动采用对方有值的内容", () => {
+  const localDb = makeEmptyDb();
+  setWorkshopInfo(localDb, "本地工坊");
+  localDb.items.push({
+    id: "PF-001",
+    code: "PF-001",
+    status: "",
+    owner: "",
+    vat: "",
+    logs: [],
+    observations: [],
+  });
+
+  const remoteDb = makeEmptyDb();
+  setWorkshopInfo(remoteDb, "对方工坊", "WS-REMOTE-001");
+  remoteDb.items.push({
+    id: "PF-001",
+    code: "PF-001",
+    status: "发酵中",
+    owner: "陈师傅",
+    vat: "三号缸",
+    logs: [],
+    observations: [],
+  });
+
+  const exportResult = createExportPackage(remoteDb);
+  const detectResult = detectConflicts(localDb, exportResult.package);
+
+  assert(detectResult.conflicts.length === 0, "应无冲突，实际有 " + detectResult.conflicts.length + " 个: " + JSON.stringify(detectResult.conflicts.map(c => c.type)));
+
+  const mergeResult = applyMerge(localDb, exportResult.package, []);
+  const item = localDb.items.find((i) => i.code === "PF-001");
+
+  assertEq(item.status, "发酵中", "空状态自动填充");
+  assertEq(item.owner, "陈师傅", "空负责人自动填充");
+  assertEq(item.vat, "三号缸", "空缸名自动填充");
+  assertEq(mergeResult.mergeResult.itemsUpdated, 1, "更新1条");
+});
+
+console.log("\n📋 21. 无冲突场景验证");
+test("完全相同的数据不应产生任何冲突", () => {
+  const localDb = makeEmptyDb();
+  setWorkshopInfo(localDb, "本地工坊");
+  const baseItem = {
+    id: "PF-001",
+    code: "PF-001",
+    source: "构树皮",
+    vat: "一号缸",
+    vatId: "V-001",
+    days: 3,
+    expectedDays: 7,
+    owner: "张师傅",
+    status: "发酵中",
+    startDate: "2026-06-15",
+    logs: [
+      { at: "2026-06-15T08:00:00.000Z", step: "建档", note: "创建", abnormal: false },
+    ],
+    observations: [
+      { at: "2026-06-16T08:00:00.000Z", temperature: "25", smell: "正常酸味", fiber: "松散", changedWater: "否", abnormalNote: "", abnormal: false },
+    ],
+  };
+  localDb.items.push(deepClone(baseItem));
+
+  const remoteDb = makeEmptyDb();
+  setWorkshopInfo(remoteDb, "对方工坊", "WS-REMOTE-001");
+  remoteDb.items.push(deepClone(baseItem));
+
+  const exportResult = createExportPackage(remoteDb);
+  const detectResult = detectConflicts(localDb, exportResult.package);
+
+  assert(detectResult.conflicts.length === 0, "完全相同数据应无冲突，实际有 " + detectResult.conflicts.length + " 个: " + JSON.stringify(detectResult.conflicts.map(c => c.type)));
+});
+
+test("无冲突数据可以直接合并（空resolvedConflicts数组）", () => {
+  const localDb = makeEmptyDb();
+  setWorkshopInfo(localDb, "本地工坊");
+  localDb.items.push({
+    id: "PF-001",
+    code: "PF-001",
+    status: "入缸",
+    owner: "张师傅",
+    vat: "一号缸",
+    logs: [],
+    observations: [],
+  });
+
+  const remoteDb = makeEmptyDb();
+  setWorkshopInfo(remoteDb, "对方工坊", "WS-REMOTE-001");
+  remoteDb.items.push({
+    id: "PF-002",
+    code: "PF-002",
+    status: "发酵中",
+    owner: "李师傅",
+    vat: "二号缸",
+    logs: [],
+    observations: [],
+  });
+  remoteDb.items.push({
+    id: "PF-001",
+    code: "PF-001",
+    status: "入缸",
+    owner: "张师傅",
+    vat: "一号缸",
+    logs: [],
+    observations: [],
+  });
+
+  const exportResult = createExportPackage(remoteDb);
+  const detectResult = detectConflicts(localDb, exportResult.package);
+
+  assert(detectResult.conflicts.length === 1, "只有本地缺失批次冲突，实际有 " + detectResult.conflicts.length + " 个: " + JSON.stringify(detectResult.conflicts.map(c => c.type)));
+  assert(detectResult.conflicts[0].type === CONFLICT_TYPES.ITEM_MISSING_LOCAL, "类型正确");
+
+  const mergeResult = applyMerge(localDb, exportResult.package, []);
+
+  const pf002 = localDb.items.find((i) => i.code === "PF-002");
+  assert(pf002, "PF-002已新增");
+  assertEq(mergeResult.mergeResult.itemsCreated, 1, "新增1条");
+  assertEq(mergeResult.mergeResult.conflictsResolved, 0, "无冲突需要解决");
 });
 
 console.log("\n📋 18. 冲突类型标签完整性验证");
